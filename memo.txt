@@ -1,0 +1,8 @@
+WebGame: だいたいこんな感じでビルド。二回目は生成済みの鍵の指定が必要。
+
+  C:/Users/koron/AppData/Local/Google/Chrome/Application/chrome.exe \
+    --pack-extension=C:/Users/koron/tmp/WebGame
+
+  C:/Users/koron/AppData/Local/Google/Chrome/Application/chrome.exe \
+    --pack-extension=C:/Users/koron/tmp/WebGame \
+    --pack-extension-key=C:/Users/koron/tmp/WebGame.pem
