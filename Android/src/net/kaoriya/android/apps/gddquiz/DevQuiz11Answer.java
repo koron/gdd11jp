@@ -76,11 +76,12 @@ public class DevQuiz11Answer extends Activity
 
     private void setAnswer(IQuizService quiz) {
         try {
-        String answer = quiz.getCode();
-        TextView text = (TextView)findViewById(R.id.AnswerBox);
-        text.setText(answer);
+            String answer = quiz.getCode();
+            TextView text = (TextView)findViewById(R.id.AnswerBox);
+            text.setText(answer);
+            Log.v(TAG, "answer=" + answer);
         } catch (Exception e) {
-            Log.w("DevQuiz11", e);
+            Log.w(TAG, e);
         }
     }
 
