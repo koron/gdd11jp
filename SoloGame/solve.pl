@@ -21,13 +21,30 @@ sub solve_all {
 sub solve_one {
     my ($array) = @_;
     for my $v (@$array) {
-        my ($rank1, $rank2) = &get_rank($v);
-        my $start = $rank1;
-        my $end = $rank1 + $rank2;
-        my $over = ($v == 0) ? 0 : $rank1 + $rank2 + 3;
-        printf "    %6d : (%d,%d)->(%d,%d,%d)\n", $v, $rank1, $rank2, $start, $end, $over;
+        my $bitmap = &get_bitmap($v);
+        printf "    %8d: %s\n", $v, $bitmap;
+        #my ($rank1, $rank2) = &get_rank($v);
+        #my $start = $rank1;
+        #my $end = $rank1 + $rank2;
+        #my $over = ($v == 0) ? 0 : $rank1 + $rank2 + 3;
+        #printf "    %6d : (%d,%d)->(%d,%d,%d)\n", $v, $rank1, $rank2, $start, $end, $over;
     }
     return 0;
+}
+
+sub get_bitmap {
+    my ($value) = @_;
+    my $retval = "";
+    while ($value > 0) {
+        if (($value % 5) == 0) {
+            $retval .= '5';
+        } else {
+            $retval .= '/';
+        }
+        $value = int($value / 2);
+    }
+    $retval .= '.';
+    return $retval;
 }
 
 sub get_rank {
