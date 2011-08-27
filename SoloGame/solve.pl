@@ -72,7 +72,6 @@ sub solve_one {
         }
     }
 
-    return (0, 'NONE');
     if ($has5 < scalar(@elements)) {
         return (0, 'LESS5');
     } else {
