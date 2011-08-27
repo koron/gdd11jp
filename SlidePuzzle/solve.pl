@@ -17,7 +17,6 @@ sub print_board {
 sub get_final_status {
     my ($first) = @_;
 
-
     (my $numbers = $first) =~ s/[=0]//g;
     my @numbers = sort split //, $numbers;
     push @numbers, '0';
