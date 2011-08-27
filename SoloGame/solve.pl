@@ -118,10 +118,12 @@ sub solve_full5 {
     my ($array) = @_;
 
     my $maxlen = &max_len($array);
+    my $andsum = &and_all($array);
+    my $max_first5 = &max_first5($array);
+    printf("  maxlen=%d max_first5=%d andsum=%08X\n", $maxlen, $max_first5,
+        $andsum);
 
     # Found solid answer.
-    my $andsum = &and_all($array);
-    printf "  andsum=%08X\n", $andsum;
     my $min1 = 0;
     for (my $i = 1; $andsum > 0 and $i <= 32; ++$i) {
         if (($andsum & 1) != 0) {
@@ -145,6 +147,7 @@ sub make_elem {
     my ($value) = @_;
     my $rawmap = &get_bitmap($value);
     my $has5 = ($rawmap =~ /5/);
+    my $first5 = index $rawmap, '5';
     return {
         value=>$value,
         len=>length($rawmap),
@@ -152,6 +155,7 @@ sub make_elem {
         padmap=>undef,
         padval=>undef,
         has5=>$has5,
+        first5=>$first5,
     };
 }
 
@@ -230,6 +234,17 @@ sub max_len {
     foreach my $elem (@$elems) {
         if ($elem->{len} > $retval) {
             $retval = $elem->{len};
+        }
+    }
+    return $retval;
+}
+
+sub max_first5 {
+    my ($elems) = @_;
+    my $retval = $elems->[0]->{first5};
+    foreach my $elem (@$elems) {
+        if ($elem->{first5} > $retval) {
+            $retval = $elem->{first5};
         }
     }
     return $retval;
