@@ -9,6 +9,8 @@ use Time::HiRes qw(gettimeofday);
 my $PROBLEMS = 'problems.txt';
 my $ANSWERS = 'answers-1.txt';
 my $OPT = 1;
+my $TIMEOUT = 120;
+my $ITEROUT = 1000000;
 
 # Load problem file.
 unlink $ANSWERS if -e $ANSWERS;
@@ -48,7 +50,8 @@ sub compute_answer {
 sub solve_one {
     my ($w, $h, $s) = @_;
     my $puzzle = &new_puzzle($w, $h, $s);
-    my $answer = &solve_puzzle($puzzle);
+    my $start = gettimeofday();
+    my $answer = &solve_puzzle($puzzle, $start);
     undef $puzzle;
     return $answer;
 }
@@ -67,7 +70,7 @@ sub new_puzzle {
 }
 
 sub solve_puzzle {
-    my ($puzzle) = @_;
+    my ($puzzle, $start) = @_;
     my $count = 0;
     my $moval = {
         U => -$puzzle->{w},
@@ -94,8 +97,11 @@ sub solve_puzzle {
         if ((++$count % 100000) == 0) {
             printf "  iterate %d\n", $count;
         }
-        if ($count > 1500000) {
-            print "  OVER_ITER\n";
+        if ((gettimeofday() - $start) > $TIMEOUT) {
+            print "  TIME OVER\n";
+            last;
+        } elsif ($count > $ITEROUT) {
+            print "  ITERATION OVER\n";
             last;
         }
         my $curr = shift @{$puzzle->{queue}};
@@ -110,7 +116,7 @@ sub solve_puzzle {
             if ($shrinkable_height and substr($next, 0, $w) eq $head_row) {
                 #printf "  Shrink height: %s\n", $hist.$d;
                 my $puzzle2 = &new_puzzle($w, $h - 1, substr($next, $w));
-                my $answer2 = &solve_puzzle($puzzle2);
+                my $answer2 = &solve_puzzle($puzzle2, $start);
                 undef $puzzle2;
                 if (defined $answer2) {
                     return $hist.$d.$answer2;
@@ -123,7 +129,7 @@ sub solve_puzzle {
                 #printf "  Shrink width: %s\n", $hist.$d;
                 my $puzzle3 = &new_puzzle($w - 1, $h,
                     &remove_head_col($next, $w));
-                my $answer3 = &solve_puzzle($puzzle3);
+                my $answer3 = &solve_puzzle($puzzle3, $start);
                 undef $puzzle3;
                 if (defined $answer3) {
                     return $hist.$d.$answer3;
