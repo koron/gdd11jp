@@ -1,5 +1,6 @@
 *.exe
 *.obj
 answers.txt
+answers-*.txt
 log.txt
 puz15wd.db
