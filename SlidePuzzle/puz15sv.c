@@ -35,6 +35,7 @@ short WDLNK[WDTBL_SIZE][2][BOARD_WIDTH];  /* リンク */
 char  WDTBL[WDTBL_SIZE];        /* WD算出テーブル   */
 char  IDTBL[IDTBL_SIZE];        /* ID算出テーブル   */
 char  RESULT[100];              /* 解答記録テーブル */
+char  RESULT2[100];
 int   DEPTH;                    /* 探索の深さ制限値 */
 int   MOVAL[BOARD_SIZE][5] = {  /* 移動可能テーブル */
   1,  4, -1,  0,  0,
@@ -102,6 +103,7 @@ int IDA(int space, int prev, int idx1o, int idx2o, int inv1o, int inv2o, int dep
 {
     int  i, j, n, n2, piece, wd1, wd2, id1, id2, diff;
     int  idx1, idx2, inv1, inv2, lowb1, lowb2;
+    char dir = '-';
 
     /* 次の手を総て試してみる */
     depth++;
@@ -123,6 +125,7 @@ int IDA(int space, int prev, int idx1o, int idx2o, int inv1o, int inv2o, int dep
                 for (j=space+1; j<piece; j++)
                     if (BOARD[j] > n) inv1--; else inv1++;
                 idx1 = WDLNK[idx1o][0][(n - 1) >> 2];
+                dir = 'D';
             } else {
                 /* 駒を左に移動 */
                 n2 = CONV[n];
@@ -131,6 +134,7 @@ int IDA(int space, int prev, int idx1o, int idx2o, int inv1o, int inv2o, int dep
                 for (j=piece-4; j>=0; j-=4)
                     if (CONV[BOARD[j]] > n2) inv2--; else inv2++;
                 idx2 = WDLNK[idx2o][0][(n2 - 1) >> 2];
+                dir = 'R';
             }
         } else {
             if (diff == -4) {
@@ -138,6 +142,7 @@ int IDA(int space, int prev, int idx1o, int idx2o, int inv1o, int inv2o, int dep
                 for (j=piece+1; j<space; j++)
                     if (BOARD[j] > n) inv1++; else inv1--;
                 idx1 = WDLNK[idx1o][1][(n - 1) >> 2];
+                dir = 'U';
             } else {
                 /* 駒を右に移動 */
                 n2 = CONV[n];
@@ -146,6 +151,7 @@ int IDA(int space, int prev, int idx1o, int idx2o, int inv1o, int inv2o, int dep
                 for (j=space-4; j>=0; j-=4)
                     if (CONV[BOARD[j]] > n2) inv2++; else inv2--;
                 idx2 = WDLNK[idx2o][1][(n2 - 1) >> 2];
+                dir = 'L';
             }
         }
 
@@ -163,6 +169,7 @@ int IDA(int space, int prev, int idx1o, int idx2o, int inv1o, int inv2o, int dep
             BOARD[space] = n;
             if (depth==DEPTH || IDA(piece, space, idx1, idx2, inv1, inv2, depth)) {
                 RESULT[depth - 1] = (char)n;  /* 解答手順を記録する */
+                RESULT2[depth - 1] = dir;
                 return TRUE;
             }
             BOARD[space] = 0;
@@ -279,8 +286,12 @@ int main(void)
     if (Search()) {
         printf("\n[%d moves] time=%dsec", DEPTH, time(NULL) - start_time);
         for (i=0; i<DEPTH; i++) {
-            if (i % 10 == 0) printf("\n");
+            if (i % 76 == 0) printf("\n");
+#if 0
             printf(" %2d ", RESULT[i]);
+#else
+            printf("%c", RESULT2[i]);
+#endif
         }
         printf("\n");
     } else {
