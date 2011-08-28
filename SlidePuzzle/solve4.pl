@@ -6,8 +6,11 @@ use warnings;
 
 use Time::HiRes qw(gettimeofday);
 #my $puzzle = &new_puzzle(3, 3, '120743586');
-my $puzzle = &new_puzzle(3, 3, '168452=30');
-#my $puzzle = &new_puzzle(4,4, '41EC86079BA532FD');
+#my $puzzle = &new_puzzle(3, 3, '168452=30');
+#my $puzzle = &new_puzzle(3, 4, '1365720A984B');
+#my $puzzle = &new_puzzle(3, 4, '4127=36B89A0');
+my $puzzle = &new_puzzle(3, 5, 'D42C7380915AB6E');
+#my $puzzle = &new_puzzle(4, 4, '41EC86079BA532FD');
 my $start = gettimeofday();
 my $answer = &solve_puzzle($puzzle);
 my $end = gettimeofday();
@@ -17,6 +20,12 @@ if (defined $answer) {
     print "Not found\n";
 }
 
+sub solve_one {
+    my ($w, $h, $s) = @_;
+    my $puzzle = &new_puzzle($w, $h, $s);
+    return &solve_puzzle($puzzle);
+}
+
 sub new_puzzle {
     my ($w, $h, $s) = @_;
     my $puzzle = {
@@ -24,9 +33,8 @@ sub new_puzzle {
         h => $h,
         first => $s,
         final => &get_final($s),
-        queue => [''],
-        hash => {},
-        moval => { 'U'=>-$w, L=>-1, R=>1, D=>$w },
+        queue => [$s],
+        hash => { $s => '' },
     };
     return $puzzle;
 }
@@ -34,40 +42,44 @@ sub new_puzzle {
 sub solve_puzzle {
     my ($puzzle) = @_;
     my $count = 0;
+    my $moval = {
+        U => -$puzzle->{w},
+        L => -1,
+        R =>  1,
+        D =>  $puzzle->{w},
+    };
     while (scalar(@{$puzzle->{queue}})) {
-        my $move = shift @{$puzzle->{queue}};
-        if ((++$count % 10000) == 0) {
+        if ((++$count % 100000) == 0) {
             printf "  iterate %d\n", $count;
         }
-        my $curr = &apply_move($puzzle, $move);
-        #printf "%s %s\n", $curr, $move;
-        if ($curr eq $puzzle->{final}) {
-            return $move;
-        } elsif (exists $puzzle->{hash}->{$curr}) {
-            next;
-        }
-        $puzzle->{hash}->{$curr} = $move;
+        my $curr = shift @{$puzzle->{queue}};
+        my $hist = $puzzle->{hash}->{$curr};
         my $movable = &get_movable($puzzle, $curr);
         foreach my $d (@$movable) {
-            push @{$puzzle->{queue}}, $move.$d;
+            my $next = &apply_move2($moval, $curr, $d);
+            if ($next eq $puzzle->{final}) {
+                return $hist.$d;
+            }
+            unless (exists $puzzle->{hash}->{$next}) {
+                $puzzle->{hash}->{$next} = $hist.$d;
+                push @{$puzzle->{queue}}, $next;
+            }
         }
     }
     return undef;
 }
 
-sub apply_move {
-    my ($puzzle, $move) = @_;
+sub apply_move2 {
+    my ($moval, $s, $d) = @_;
 
-    my @state = split //, $puzzle->{first};
-    my $now = index $puzzle->{first}, '0';
-    for my $d (split(//, $move)) {
-        my $next = $now;
-        if (exists $puzzle->{moval}->{$d}) {
-            $next += $puzzle->{moval}->{$d};
-        }
+    my @state = split //, $s;
+    my $now = index $s, '0';
+    my $next = $now;
+    if (exists $moval->{$d}) {
+        $next += $moval->{$d};
         @state[$now, $next] = @state[$next, $now];
-        $now = $next;
     }
+
     return join('', @state);
 }
 
@@ -78,7 +90,7 @@ sub get_movable {
     my $pos = index $curr, '0';
     my $w = $puzzle->{w};
     my $x = $pos % $w;
-    my $y = int($pos / $puzzle->{h});
+    my $y = int($pos / $w);
     my @s = split //, $curr;
 
     if ($x > 0 and $s[$pos - 1] ne '=') {
