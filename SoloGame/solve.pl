@@ -147,7 +147,7 @@ sub make_elem {
     my ($value) = @_;
     my $rawmap = &get_bitmap($value);
     my $has5 = ($rawmap =~ /5/);
-    my $first5 = index $rawmap, '5';
+    my $first5 = index($rawmap, '5') + 1;
     return {
         value=>$value,
         len=>length($rawmap),
@@ -177,7 +177,7 @@ sub pad_elem {
         }
     }
 
-    $padmap =~ s/..../$& /g;
+    $padmap =~ s/...../$& /g;
     $elem->{padmap} = $padmap;
     $elem->{padval} = $padval;
 
