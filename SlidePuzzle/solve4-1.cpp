@@ -4,11 +4,13 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <sstream>
 
 using std::string;
 using std::deque;
 using std::map;
 using std::vector;
+using std::istringstream;
 
     string
 get_final_state(const string& s)
@@ -82,7 +84,7 @@ apply_move(const string& s, int w, char dir)
 }
 
     string
-solve_puzzle(int w, int h, const string& s)
+solve_puzzle2(int w, int h, const string& s)
 {
     string retval;
 
@@ -91,7 +93,6 @@ solve_puzzle(int w, int h, const string& s)
     map<string,string> hash;
     hash[s] = string("");
     string final = get_final_state(s);
-    printf("%s -> %s\n", s.c_str(), final.c_str());
 
     int count = 0;
     while (!queue.empty())
@@ -126,13 +127,29 @@ solve_puzzle(int w, int h, const string& s)
     return retval;
 }
 
+    string
+solve_puzzle(int w, int h, const string& s)
+{
+    printf("Solving: %s\n", s.c_str());
+    return solve_puzzle2(w, h, s);
+}
+
     int
 main(int argc, char** argv)
 {
-    //string answer = solve_puzzle(3, 3, "120743586");
-    //string answer = solve_puzzle(3, 3, "168452=30");
-    //string answer = solve_puzzle(3, 4, "1365720A984B");
-    string answer = solve_puzzle(3, 4, "4127=36B89A0");
-    //string answer = solve_puzzle(3, 5, "D42C7380915AB6E");
-    printf("answer=%s\n", answer.c_str());
+    for (++argv; *argv; ++argv)
+    {
+        int w, h;
+        char ch;
+        string puzzle;
+
+        istringstream is(*argv);
+        is >> w >> ch >> h >> ch >> puzzle;
+
+        printf("(%d, %d): %s\n", w, h, puzzle.c_str());
+        string answer = solve_puzzle(w, h, puzzle);
+        printf("-> %s\n", answer.c_str());
+    }
+
+    return 0;
 }
