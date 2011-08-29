@@ -48,18 +48,24 @@ get_pos(const string& s)
 }
 
     void
-get_movable(vector<char>& movable, int w, int h, const string& s, int pos)
+get_movable(
+        vector<char>& movable,
+        int w,
+        int h,
+        const string& s,
+        int pos,
+        char last_move)
 {
     int x = pos % w;
-    if (x > 0 && s[pos - 1] != '=')
+    if (x > 0 && last_move != 'R' && s[pos - 1] != '=')
         movable.push_back('L');
-    if (x < (w - 1) && s[pos + 1] != '=')
+    if (x < (w - 1) && last_move != 'L' && s[pos + 1] != '=')
         movable.push_back('R');
 
     int y = pos / w;
-    if (y > 0 && s[pos - w] != '=')
+    if (y > 0 && last_move != 'D' && s[pos - w] != '=')
         movable.push_back('U');
-    if (y < (h - 1) && s[pos + w] != '=')
+    if (y < (h - 1) && last_move != 'U' && s[pos + w] != '=')
         movable.push_back('D');
 }
 
@@ -136,7 +142,9 @@ solve_puzzle2(const clock_t& start, int w, int h, const string& s)
         int pos = get_pos(curr.first);
 
         vector<char> movable;
-        get_movable(movable, w, h, curr.first, pos);
+        char last_move = (curr.second.length() > 0)
+            ? *curr.second.rbegin() : ' ';
+        get_movable(movable, w, h, curr.first, pos, last_move);
         for (vector<char>::const_iterator i = movable.begin();
                 i != movable.end(); ++i)
         {
@@ -190,7 +198,8 @@ solve_puzzle2(const clock_t& start, int w, int h, const string& s)
         if ((count % 500000) == 0)
             printf("  ITERATION %d\n", count);
 
-        if (count >= 1500000) {
+        if (count >= 1500000)
+        {
             log_append("  OVER ITERATION\n");
             break;
         }
