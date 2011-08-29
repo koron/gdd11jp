@@ -1,16 +1,19 @@
 #include <algorithm>
 #include <cstdio>
 #include <deque>
-#include <map>
+#include <set>
 #include <string>
 #include <vector>
 
 #include "log.hpp"
 
-using std::string;
 using std::deque;
-using std::map;
+using std::pair;
+using std::set;
+using std::string;
 using std::vector;
+
+typedef pair<string, string> qitem;
 
     string
 get_final_state(const string& s)
@@ -83,10 +86,10 @@ apply_move(const string& s, int pos, int w, char dir)
     string
 solve_puzzle2(int w, int h, const string& s)
 {
-    deque<string> queue;
-    queue.push_back(s);
-    map<string,string> hash;
-    hash[s] = string("");
+    deque<qitem> queue;
+    queue.push_back(qitem(s, string("")));
+    set<string> hash;
+    hash.insert(s);
     string final = get_final_state(s);
 
     int count = 0;
@@ -94,29 +97,29 @@ solve_puzzle2(int w, int h, const string& s)
     {
         ++count;
 
-        const string curr = queue.front();
-        queue.pop_front();
-        const string& hist = hash[curr];
-        int pos = get_pos(curr);
+        const qitem& curr = queue.front();
+        int pos = get_pos(curr.first);
 
         vector<char> movable;
-        get_movable(movable, w, h, curr, pos);
+        get_movable(movable, w, h, curr.first, pos);
         for (vector<char>::const_iterator i = movable.begin();
                 i != movable.end(); ++i)
         {
-            string next = apply_move(curr, pos, w, *i);
-            string new_hist = hist;
+            string next = apply_move(curr.first, pos, w, *i);
+            string new_hist = curr.second;
             new_hist += *i;
             if (next == final) {
                 log_append("  -> Found at %d\n", count);
                 return new_hist;
             }
-            if (hash.find(next) == hash.end())
+            if (hash.count(next) == 0)
             {
-                hash[next] = new_hist;
-                queue.push_back(next);
+                hash.insert(next);
+                queue.push_back(qitem(next, new_hist));
             }
         }
+
+        queue.pop_front();
 
         if ((count % 500000) == 0) {
             printf("  ITERATION %d\n", count);
