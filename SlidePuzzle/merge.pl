@@ -12,7 +12,11 @@ while (my $line1 = <IN1>) {
     chomp $line1;
     chomp $line2;
     if ($line1 ne '') {
-        print $line1, "\n";
+        if ($line2 ne '' and length($line2 < $line1)) {
+            print $line2, "\n";
+        } else {
+            print $line1, "\n";
+        }
     } else {
         print $line2, "\n";
     }
