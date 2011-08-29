@@ -5,11 +5,12 @@
 #include <string>
 #include <vector>
 
+#include "log.hpp"
+
 using std::string;
 using std::deque;
 using std::map;
 using std::vector;
-using std::istringstream;
 
     string
 get_final_state(const string& s)
@@ -82,8 +83,6 @@ apply_move(const string& s, int pos, int w, char dir)
     string
 solve_puzzle2(int w, int h, const string& s)
 {
-    string retval;
-
     deque<string> queue;
     queue.push_back(s);
     map<string,string> hash;
@@ -93,6 +92,8 @@ solve_puzzle2(int w, int h, const string& s)
     int count = 0;
     while (!queue.empty())
     {
+        ++count;
+
         const string curr = queue.front();
         queue.pop_front();
         const string& hist = hash[curr];
@@ -107,6 +108,7 @@ solve_puzzle2(int w, int h, const string& s)
             string new_hist = hist;
             new_hist += *i;
             if (next == final) {
+                log_append("  -> Found at %d\n", count);
                 return new_hist;
             }
             if (hash.find(next) == hash.end())
@@ -116,17 +118,20 @@ solve_puzzle2(int w, int h, const string& s)
             }
         }
 
-        if ((++count % 500000) == 0) {
-            printf("  iterate %d\n", count);
+        if ((count % 500000) == 0) {
+            printf("  ITERATION %d\n", count);
+        }
+        if (count >= 1500000) {
+            log_append("  OVER ITERATION\n");
+            break;
         }
     }
 
-    return retval;
+    return string();
 }
 
     string
 solve_puzzle(int w, int h, const string& s)
 {
-    printf("Solving: %s\n", s.c_str());
     return solve_puzzle2(w, h, s);
 }
