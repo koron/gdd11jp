@@ -3,7 +3,6 @@
 *.obj
 *.pdb
 *.suo
-answers-*.txt
 answers.txt
 log.txt
 puz15wd.db
