@@ -2,6 +2,7 @@
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include "solver.hpp"
@@ -11,8 +12,8 @@ using std::string;
 using std::istringstream;
 using std::ifstream;
 
-    int
-main(int argc, char** argv)
+    void
+solve_all(void)
 {
     log_open("output.log");
 
@@ -68,6 +69,33 @@ main(int argc, char** argv)
             (float)(end - start) / CLOCKS_PER_SEC);
 
     log_close();
+}
 
+    int
+main(int argc, char** argv)
+{
+    for (int i = 1; i < argc; ++i)
+    {
+        string a = argv[i];
+        if (a == string("--all"))
+            solve_all();
+        else
+        {
+
+            int w, h;
+            char ch;
+            string puzzle;
+
+            istringstream iss(a);
+            iss >> w >> ch >> h >> ch >> puzzle;
+            log_append("(%d, %d): %s\n", w, h, puzzle.c_str());
+
+            string answer = solve_puzzle(w, h, puzzle);
+            if (answer.empty())
+                log_append("  => RETIRED\n");
+            else
+                log_append("  => ANSWER: %s\n", answer.c_str());
+        }
+    }
     return 0;
 }
