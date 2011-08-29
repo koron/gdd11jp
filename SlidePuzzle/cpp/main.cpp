@@ -13,7 +13,7 @@ using std::istringstream;
 using std::ifstream;
 
     void
-solve_all(void)
+solve_all(int version)
 {
     log_open("output.log");
 
@@ -45,9 +45,9 @@ solve_all(void)
         log_append("#%d (%d, %d): %s\n", lnum, w, h, puzzle.c_str());
 
         string answer;
-        if (rank <= 12)
+        if (rank <= 9)
         {
-            answer = solve_puzzle(w, h, puzzle);
+            answer = solve_puzzle(w, h, puzzle, version);
             if (answer.empty())
                 log_append("  => RETIRED\n");
             else
@@ -74,11 +74,16 @@ solve_all(void)
     int
 main(int argc, char** argv)
 {
+    int version = 0;
     for (int i = 1; i < argc; ++i)
     {
         string a = argv[i];
-        if (a == string("--all"))
-            solve_all();
+        if (a == string("--all") || a == string("-a"))
+            solve_all(version);
+        else if (a == string("-1"))
+            version = 1;
+        else if (a == string("-2"))
+            version = 2;
         else
         {
 
@@ -90,7 +95,7 @@ main(int argc, char** argv)
             iss >> w >> ch >> h >> ch >> puzzle;
             log_append("(%d, %d): %s\n", w, h, puzzle.c_str());
 
-            string answer = solve_puzzle(w, h, puzzle);
+            string answer = solve_puzzle(w, h, puzzle, version);
             if (answer.empty())
                 log_append("  => RETIRED\n");
             else
