@@ -105,7 +105,7 @@ match_head_col(const string& a, const string& b, int w, int h)
 }
 
     string
-solve_puzzle2(int w, int h, const string& s)
+solve_puzzle2(const clock_t& start, int w, int h, const string& s)
 {
     deque<qitem> queue;
     queue.push_back(qitem(s, string("")));
@@ -153,7 +153,7 @@ solve_puzzle2(int w, int h, const string& s)
             if (shrinkable_height && match_head_row(next, final, w))
             {
                 string puzzle2 = string(next, w);
-                string answer2 = solve_puzzle2(w, h - 1, puzzle2);
+                string answer2 = solve_puzzle2(start, w, h - 1, puzzle2);
                 if (!answer2.empty())
                 {
                     new_hist += answer2;
@@ -169,7 +169,7 @@ solve_puzzle2(int w, int h, const string& s)
                 string puzzle3;
                 for (int i = 1, N = w * h; i < N; i += w)
                     puzzle3 += string(next, i, new_w);
-                string answer3 = solve_puzzle2(new_w, h, puzzle3);
+                string answer3 = solve_puzzle2(start, new_w, h, puzzle3);
                 if (!answer3.empty())
                 {
                     new_hist += answer3;
@@ -187,11 +187,19 @@ solve_puzzle2(int w, int h, const string& s)
 
         queue.pop_front();
 
-        if ((count % 500000) == 0) {
+        if ((count % 500000) == 0)
             printf("  ITERATION %d\n", count);
-        }
+
         if (count >= 1500000) {
             log_append("  OVER ITERATION\n");
+            break;
+        }
+
+        clock_t now = clock();
+        int sec = (now - start) / CLOCKS_PER_SEC;
+        if (sec >= 60)
+        {
+            log_append("  OVER TIME\n");
             break;
         }
     }
@@ -203,7 +211,7 @@ solve_puzzle2(int w, int h, const string& s)
 solve_puzzle(int w, int h, const string& s)
 {
     clock_t start = ::clock();
-    string answer = solve_puzzle2(w, h, s);
+    string answer = solve_puzzle2(start, w, h, s);
     clock_t end = ::clock();
     float sec = (float)(end - start) / CLOCKS_PER_SEC;
     log_append("  -> in %f sec\n", sec);
