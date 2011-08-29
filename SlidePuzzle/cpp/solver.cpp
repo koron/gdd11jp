@@ -16,6 +16,8 @@ using std::vector;
 
 typedef pair<string, string> qitem;
 
+static bool enable_shrink = true;
+
     string
 get_final_state(const string& s)
 {
@@ -84,6 +86,24 @@ apply_move(const string& s, int pos, int w, char dir)
     return new_s;
 }
 
+    bool
+match_head_row(const string& a, const string& b, int w)
+{
+    for (int i = 0; i < w; ++i)
+        if (a[i] != b[i])
+            return false;
+    return true;
+}
+
+    bool
+match_head_col(const string& a, const string& b, int w, int h)
+{
+    for (int i = 0, N = w * h; i < N; i += w)
+        if (a[i] != b[i])
+            return false;
+    return true;
+}
+
     string
 solve_puzzle2(int w, int h, const string& s)
 {
@@ -92,6 +112,20 @@ solve_puzzle2(int w, int h, const string& s)
     set<string> hash;
     hash.insert(s);
     string final = get_final_state(s);
+
+    // Setup option switches.
+    bool shrinkable_height = false;
+    if (enable_shrink && h > 2
+            && s[w + 1] != '=' && s[w * 2 - 2] != '=')
+    {
+        shrinkable_height = true;
+    }
+    bool shrinkable_width = false;
+    if (enable_shrink && w > 2
+            && s[w + 1] != '=' && s[w * (h - 2) + 1] != '=')
+    {
+        shrinkable_width = true;
+    }
 
     int count = 0;
     while (!queue.empty())
@@ -109,10 +143,41 @@ solve_puzzle2(int w, int h, const string& s)
             string next = apply_move(curr.first, pos, w, *i);
             string new_hist = curr.second;
             new_hist += *i;
+
             if (next == final) {
                 log_append("  -> Found at %d\n", count);
                 return new_hist;
             }
+
+            // Check height shrinkable.
+            if (shrinkable_height && match_head_row(next, final, w))
+            {
+                string puzzle2 = string(next, w);
+                string answer2 = solve_puzzle2(w, h - 1, puzzle2);
+                if (!answer2.empty())
+                {
+                    new_hist += answer2;
+                    log_append("  -> Found at %d (height shrinked)\n", count);
+                    return new_hist;
+                }
+            }
+
+            // Check width shrinkable.
+            if (shrinkable_width && match_head_col(next, final, w, h))
+            {
+                int new_w = w - 1;
+                string puzzle3;
+                for (int i = 1, N = w * h; i < N; i += w)
+                    puzzle3 += string(next, i, new_w);
+                string answer3 = solve_puzzle2(new_w, h, puzzle3);
+                if (!answer3.empty())
+                {
+                    new_hist += answer3;
+                    log_append("  -> Found at %d (width shrinked)\n", count);
+                    return new_hist;
+                }
+            }
+
             if (hash.count(next) == 0)
             {
                 hash.insert(next);
