@@ -1,5 +1,6 @@
 #include <algorithm>
 #include <cstdio>
+#include <ctime>
 #include <deque>
 #include <set>
 #include <string>
@@ -136,5 +137,10 @@ solve_puzzle2(int w, int h, const string& s)
     string
 solve_puzzle(int w, int h, const string& s)
 {
-    return solve_puzzle2(w, h, s);
+    clock_t start = ::clock();
+    string answer = solve_puzzle2(w, h, s);
+    clock_t end = ::clock();
+    float sec = (float)(end - start) / CLOCKS_PER_SEC;
+    log_append("  -> in %f sec\n", sec);
+    return answer;
 }
