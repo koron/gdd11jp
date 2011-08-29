@@ -42,10 +42,8 @@ get_pos(const string& s)
 }
 
     void
-get_movable(vector<char>& movable, int w, int h, const string& s)
+get_movable(vector<char>& movable, int w, int h, const string& s, int pos)
 {
-    int pos = get_pos(s);
-
     int x = pos % w;
     if (x > 0 && s[pos - 1] != '=')
         movable.push_back('L');
@@ -60,7 +58,7 @@ get_movable(vector<char>& movable, int w, int h, const string& s)
 }
 
     string
-apply_move(const string& s, int w, char dir)
+apply_move(const string& s, int pos, int w, char dir)
 {
     int diff = 0;
     switch (dir)
@@ -74,7 +72,6 @@ apply_move(const string& s, int w, char dir)
     string new_s = s;
     if (diff != 0)
     {
-        int pos = get_pos(s);
         int new_pos = pos + diff;
         new_s[pos] = s[new_pos];
         new_s[new_pos] = '0';
@@ -100,13 +97,14 @@ solve_puzzle2(int w, int h, const string& s)
         const string curr = queue.front();
         queue.pop_front();
         const string& hist = hash[curr];
+        int pos = get_pos(curr);
 
         vector<char> movable;
-        get_movable(movable, w, h, curr);
+        get_movable(movable, w, h, curr, pos);
         for (vector<char>::const_iterator i = movable.begin();
                 i != movable.end(); ++i)
         {
-            string next = apply_move(curr, w, *i);
+            string next = apply_move(curr, pos, w, *i);
             string new_hist = hist;
             new_hist += *i;
             if (next == final) {
