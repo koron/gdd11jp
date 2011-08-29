@@ -17,6 +17,7 @@ using std::vector;
 typedef pair<string, string> qitem;
 
 static bool enable_shrink = true;
+static int iteration_limit = 1500000;
 
     string
 get_final_state(const string& s)
@@ -198,7 +199,7 @@ solve_puzzle2(const clock_t& start, int w, int h, const string& s)
         if ((count % 500000) == 0)
             printf("  ITERATION %d\n", count);
 
-        if (count >= 1500000)
+        if (count >= iteration_limit)
         {
             log_append("  OVER ITERATION\n");
             break;
