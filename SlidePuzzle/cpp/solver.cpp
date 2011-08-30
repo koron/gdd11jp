@@ -112,7 +112,7 @@ match_head_col(const string& a, const string& b, int w, int h)
 }
 
     string
-solve_puzzle2(const clock_t& start, int w, int h, const string& s)
+solve_puzzle1(const clock_t& start, int w, int h, const string& s)
 {
     deque<qitem> queue;
     queue.push_back(qitem(s, string("")));
@@ -162,7 +162,7 @@ solve_puzzle2(const clock_t& start, int w, int h, const string& s)
             if (shrinkable_height && match_head_row(next, final, w))
             {
                 string puzzle2 = string(next, w);
-                string answer2 = solve_puzzle2(start, w, h - 1, puzzle2);
+                string answer2 = solve_puzzle1(start, w, h - 1, puzzle2);
                 if (!answer2.empty())
                 {
                     new_hist += answer2;
@@ -178,7 +178,7 @@ solve_puzzle2(const clock_t& start, int w, int h, const string& s)
                 string puzzle3;
                 for (int i = 1, N = w * h; i < N; i += w)
                     puzzle3 += string(next, i, new_w);
-                string answer3 = solve_puzzle2(start, new_w, h, puzzle3);
+                string answer3 = solve_puzzle1(start, new_w, h, puzzle3);
                 if (!answer3.empty())
                 {
                     new_hist += answer3;
@@ -217,11 +217,188 @@ solve_puzzle2(const clock_t& start, int w, int h, const string& s)
     return string();
 }
 
+////////////////////////////////////////////////////////////////////////////
+//
+
+string NOTFOUND("NOTFOUND");
+
+class pos_t
+{
+public:
+    int col;
+    int row;
+
+    pos_t() : col(0), row(0) {}
+    pos_t(const pos_t& s) : col(s.col), row(s.row) {}
+    pos_t(int c, int r) : col(c), row(r) {}
+    pos_t(int w, const string& s, char ch) {
+        int n = s.find_first_of(ch);
+        col = n % w;
+        row = n / w;
+    }
+};
+
+class step_t
+{
+public:
+    char last_move;
+    vector<char> movable;
+    string board;
+    int pos;
+    int distance;
+
+    step_t() : last_move('\0'), pos(-1), distance(0) {}
+    step_t(const string& b) : last_move('\0'), distance(0) {
+        set_board(b);
+    }
+    void reset(void) {
+        last_move = '\0';
+        movable.clear();
+        board.clear();
+        pos = -1;
+        distance = 0;
+    }
+    void set_board(const string& b) {
+        board = b;
+        pos = get_pos(board);
+    }
+};
+
+    int
+operator - (const pos_t& a, const pos_t& b)
+{
+    int dr = a.row - b.row;
+    if (dr < 0)
+        dr = -dr;
+    int dc = a.col - b.col;
+    if (dc < 0)
+        dc = -dc;
+    return dr + dc;
+}
+
+    int
+get_distance(int w, int h, const string& s, const string& final)
+{
+    pos_t p0(w, s, '0');
+    pos_t p1(w, final, '0');
+    return p1 - p0;
+}
+
     string
-solve_puzzle(int w, int h, const string& s)
+depth_first(clock_t start, int depth, int w, int h,
+        const string& first, const string& final)
+{
+    if (first == final)
+    {
+        log_append("  -> No moves\n");
+        return string();
+    }
+
+    vector<step_t> steps(depth);
+    step_t first_step(first);
+    // TODO: setup first distance.
+
+    int count = 0;
+    int i = 0;
+    while (true)
+    {
+        // Get previous step infos.
+        const step_t& prev = (i > 0) ? steps[i - 1] : first_step;
+
+        // Determine current action.
+        step_t& curr = steps[i];
+        bool backtrack = false;
+        if (curr.movable.empty())
+        {
+            if (curr.last_move == '\0')
+            {
+                get_movable(curr.movable, w, h, prev.board, prev.pos,
+                        prev.last_move);
+                backtrack = curr.movable.empty();
+            }
+            else
+            {
+                backtrack = true;
+            }
+        }
+
+        // Make backtrack if needs.
+        if (backtrack)
+        {
+            // back track.
+            curr.reset();
+            if (--i >= 0)
+                continue;
+            else
+            {
+                //log_append("  -> Not found!\n");
+                return NOTFOUND;
+            }
+        }
+
+        curr.last_move = curr.movable.back();
+        curr.movable.pop_back();
+        curr.set_board(apply_move(prev.board, prev.pos, w, curr.last_move));
+        // TODO: Update distance or some infos.
+
+        if (i + 1 >= depth)
+        {
+            // Check does curr.board equal with final.
+            ++count;
+            if ((count % 250000) == 0)
+                printf("  ITERATION %d\n", count);
+            if (curr.board == final)
+                break;
+        }
+        else
+        {
+            // Check lower boundary for curr.board.
+            if (i + curr.distance <= depth)
+                ++i;
+        }
+    }
+
+    log_append("  -> Found in depth %d at count %d\n", depth, count);
+    string answer;
+    for (vector<step_t>::const_iterator i = steps.begin();
+            i != steps.end(); ++i)
+        answer += i->last_move;
+    return answer;
+}
+
+    string
+solve_puzzle2(const clock_t& start, int w, int h, const string& s)
+{
+    string final = get_final_state(s);
+    int init_depth = get_distance(w, h, s, final);
+    if (init_depth == 0)
+        init_depth = 2;
+    for (int depth = init_depth; ; depth += 2)
+    {
+        printf("  -> Depth #%d\n", depth);
+        string answer = depth_first(start, depth, w, h, s, final);
+        if (answer != NOTFOUND)
+            return answer;
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+
+    string
+solve_puzzle(int w, int h, const string& s, int version)
 {
     clock_t start = ::clock();
-    string answer = solve_puzzle2(start, w, h, s);
+    string answer;
+    switch (version)
+    {
+        case 1:
+            answer = solve_puzzle1(start, w, h, s);
+            break;
+        case 2:
+        default:
+            answer = solve_puzzle2(start, w, h, s);
+    }
     clock_t end = ::clock();
     float sec = (float)(end - start) / CLOCKS_PER_SEC;
     log_append("  -> in %f sec\n", sec);

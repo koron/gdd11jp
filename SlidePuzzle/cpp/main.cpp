@@ -2,6 +2,7 @@
 #include <ctime>
 #include <fstream>
 #include <iostream>
+#include <sstream>
 #include <string>
 
 #include "solver.hpp"
@@ -11,8 +12,8 @@ using std::string;
 using std::istringstream;
 using std::ifstream;
 
-    int
-main(int argc, char** argv)
+    void
+solve_all(int version)
 {
     log_open("output.log");
 
@@ -44,9 +45,9 @@ main(int argc, char** argv)
         log_append("#%d (%d, %d): %s\n", lnum, w, h, puzzle.c_str());
 
         string answer;
-        if (rank <= 12)
+        if (rank <= 9)
         {
-            answer = solve_puzzle(w, h, puzzle);
+            answer = solve_puzzle(w, h, puzzle, version);
             if (answer.empty())
                 log_append("  => RETIRED\n");
             else
@@ -68,6 +69,38 @@ main(int argc, char** argv)
             (float)(end - start) / CLOCKS_PER_SEC);
 
     log_close();
+}
 
+    int
+main(int argc, char** argv)
+{
+    int version = 0;
+    for (int i = 1; i < argc; ++i)
+    {
+        string a = argv[i];
+        if (a == string("--all") || a == string("-a"))
+            solve_all(version);
+        else if (a == string("-1"))
+            version = 1;
+        else if (a == string("-2"))
+            version = 2;
+        else
+        {
+
+            int w, h;
+            char ch;
+            string puzzle;
+
+            istringstream iss(a);
+            iss >> w >> ch >> h >> ch >> puzzle;
+            log_append("(%d, %d): %s\n", w, h, puzzle.c_str());
+
+            string answer = solve_puzzle(w, h, puzzle, version);
+            if (answer.empty())
+                log_append("  => RETIRED\n");
+            else
+                log_append("  => ANSWER: %s\n", answer.c_str());
+        }
+    }
     return 0;
 }

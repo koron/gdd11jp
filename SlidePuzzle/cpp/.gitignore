@@ -1,4 +1,5 @@
 *.zip
+solver
 output.log
 solver
 tags
