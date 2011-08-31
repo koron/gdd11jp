@@ -535,30 +535,29 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
             }
         }
 
-        step2_t::direction dir = curr.movable[curr.move_index++];
-        assert(curr.move_index < 5);
-        int new_pos = prev.pos + dir;
-        char ch = board[new_pos];
+        // Revert board for previous.
+        if (curr.is_moved())
+        {
+            board[curr.pos] = board[prev.pos];
+            board[prev.pos] = '0';
+        }
+        curr.moved = curr.movable[curr.move_index++];
+        curr.pos = prev.pos + curr.moved;
+        char ch = board[prev.pos] = board[curr.pos];
+        board[curr.pos] = '0';
 
         // Update distance.
-        int new_dist = prev.distance - get_md_val(w, ch, pos2old[new_pos])
+        curr.distance = prev.distance - get_md_val(w, ch, pos2old[curr.pos])
             + get_md_val(w, ch, pos2old[prev.pos]);
 
         if (depth < depth_limit)
         {
             // Check lower boundary for curr.board.
             ++count;
-            if (depth + new_dist <= depth_limit)
-            {
-                curr.moved = dir;
-                curr.pos = new_pos;
-                curr.distance = new_dist;
-                board[prev.pos] = ch;
-                board[curr.pos] = '0';
+            if (depth + curr.distance <= depth_limit)
                 ++depth;
-            }
         }
-        else if (new_dist == 0)
+        else if (curr.distance == 0)
         {
             // Found the answer!
             break;
@@ -604,7 +603,7 @@ solve_puzzle2(const clock_t& start, int w, int h, const string& s)
     for (int depth = init_depth; ; depth += 2)
     {
         printf("  -- Depth #%d\n", depth);
-        string answer = depth_first1(start, depth, w, h, s, final);
+        string answer = depth_first2(start, depth, w, h, s, final);
         if (answer != NOTFOUND)
             return answer;
     }
