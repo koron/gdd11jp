@@ -25,7 +25,7 @@ while (<>) {
 }
 
 for (@order) {
-    my $c = $count{$_};
+    my $c = $count{$_} || 0;
     my $l = $limit{$_};
     printf "%s: %5d/%5d (%.2f%%)\n", $_, $c, $l, ($c * 100 / $l);
 }
