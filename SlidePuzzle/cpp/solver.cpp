@@ -321,7 +321,6 @@ depth_first(clock_t start, int depth, int w, int h,
     first_step.distance = get_md_sum(w, first, final);
 
     int count = 0;
-    int count2 = 0;
     int i = 0;
     while (true)
     {
@@ -356,7 +355,7 @@ depth_first(clock_t start, int depth, int w, int h,
             }
             else
             {
-                printf("    --> Not found: %d/%d\n", count, count2);
+                printf("  --- Not found: %d\n", count);
                 return NOTFOUND;
             }
         }
@@ -373,21 +372,19 @@ depth_first(clock_t start, int depth, int w, int h,
         if (i + 1 >= depth)
         {
             // Check does curr.board equal with final.
-            ++count;
             if (curr.distance == 0)
                 break;
         }
         else
         {
             // Check lower boundary for curr.board.
-            ++count2;
+            ++count;
             if (i + curr.distance <= depth)
                 ++i;
         }
     }
 
-    log_append("  -> Found in depth %d at count %d/%d\n", depth, count,
-            count2);
+    log_append("  -> Found in depth %d at count %d\n", depth, count);
     string answer;
     for (vector<step_t>::const_iterator i = steps.begin();
             i != steps.end(); ++i)
@@ -407,7 +404,7 @@ solve_puzzle2(const clock_t& start, int w, int h, const string& s)
         init_depth = init_md;
     for (int depth = init_depth; ; depth += 2)
     {
-        printf("  -> Depth #%d\n", depth);
+        printf("  -- Depth #%d\n", depth);
         string answer = depth_first(start, depth, w, h, s, final);
         if (answer != NOTFOUND)
             return answer;
