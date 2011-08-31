@@ -356,8 +356,7 @@ depth_first(clock_t start, int depth, int w, int h,
             }
             else
             {
-                printf("    --> Try count: %d/%d\n", count, count2);
-                //log_append("  -> Not found!\n");
+                printf("    --> Not found: %d/%d\n", count, count2);
                 return NOTFOUND;
             }
         }
