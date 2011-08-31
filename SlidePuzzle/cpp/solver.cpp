@@ -17,6 +17,7 @@ using std::string;
 using std::vector;
 
 typedef pair<string, string> qitem;
+typedef char cell_t;
 
 static bool enable_shrink = true;
 static int iteration_limit = 1500000;
@@ -47,7 +48,7 @@ get_final_state(const string& s)
     int
 get_pos(const string& s)
 {
-    return s.find_first_of('0');
+    return (int)s.find_first_of('0');
 }
 
     void
@@ -234,7 +235,7 @@ public:
     pos_t(const pos_t& s) : col(s.col), row(s.row) {}
     pos_t(int c, int r) : col(c), row(r) {}
     pos_t(int w, const string& s, char ch) {
-        int n = s.find_first_of(ch);
+        int n = (int)s.find_first_of(ch);
         col = n % w;
         row = n / w;
     }
@@ -330,7 +331,7 @@ operator - (const pos_t& a, const pos_t& b)
 }
 
     int
-get_distance(int w, int h, const string& s, const string& final)
+get_distance(int w, const string& s, const string& final)
 {
     pos_t p0(w, s, '0');
     pos_t p1(w, final, '0');
@@ -348,7 +349,7 @@ get_md_val(int w, char ch, int i)
 get_md_sum(int w, const string& s, const string& final)
 {
     int md_sum = 0;
-    for (int i = 0, N = s.length(); i < N; ++i)
+    for (int i = 0, N = (int)s.length(); i < N; ++i)
     {
         char ch = s[i];
         if (ch == '=' || ch == '0')
@@ -445,7 +446,7 @@ depth_first1(clock_t start, int depth, int w, int h,
 }
 
     bool
-get_movable2(step2_t& curr, const step2_t& prev, const char* board)
+get_movable2(step2_t& curr, const step2_t& prev, const cell_t* board)
 {
     int index = 0;
     const step2_t::direction moved = prev.moved;
@@ -462,6 +463,13 @@ get_movable2(step2_t& curr, const step2_t& prev, const char* board)
     return index == 0;
 }
 
+    int
+get_md_val2(int w, cell_t ch, int i)
+{
+    int j = (ch >= 'A') ? (ch - 'A' + 9) : (ch - '1');
+    return ::abs((i % w) - (j % w)) + ::abs((i / w) - (j / w));
+}
+
     string
 depth_first2(clock_t start, int depth_limit, int w, int h,
         const string& first, const string& final)
@@ -474,17 +482,20 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
 
     // Setup working board.
     int pos = 0;
-    char board[64];
+    cell_t board[64];
     int pos2old[64];
-    ::memset(board, '=', sizeof(board));
-    ::memset(pos2old, 0, sizeof(pos2old));
+    for (int i = 0; i < 64; ++i)
+    {
+        board[i] = '=';
+        pos2old[i] = 0;
+    }
     for (int i = 0; i < h; ++i)
     {
         for (int j = 0; j < w; ++j)
         {
             int newpos = i * 8 + j + 9;
             int oldpos = i * w + j;
-            char ch = board[newpos] = first[oldpos];
+            cell_t ch = board[newpos] = first[oldpos];
             if (ch == '0')
                 pos = newpos;
             pos2old[newpos] = oldpos;
@@ -543,12 +554,13 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
         }
         curr.moved = curr.movable[curr.move_index++];
         curr.pos = prev.pos + curr.moved;
-        char ch = board[prev.pos] = board[curr.pos];
+        cell_t ch = board[prev.pos] = board[curr.pos];
         board[curr.pos] = '0';
 
         // Update distance.
-        curr.distance = prev.distance - get_md_val(w, ch, pos2old[curr.pos])
-            + get_md_val(w, ch, pos2old[prev.pos]);
+        curr.distance = prev.distance
+            - get_md_val2(w, ch, pos2old[curr.pos])
+            + get_md_val2(w, ch, pos2old[prev.pos]);
 
         if (depth < depth_limit)
         {
@@ -594,7 +606,7 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
 solve_puzzle2(const clock_t& start, int w, int h, const string& s)
 {
     string final = get_final_state(s);
-    int init_depth = get_distance(w, h, s, final);
+    int init_depth = get_distance(w, s, final);
     int init_md = get_md_sum(w, s, final);
     if ((init_md % 2) != (init_depth % 2))
         init_depth = init_md + 1;

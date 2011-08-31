@@ -45,7 +45,7 @@ solve_all(int version)
         log_append("#%d (%d, %d): %s\n", lnum, w, h, puzzle.c_str());
 
         string answer;
-        if (rank <= 9)
+        if (rank <= 16)
         {
             answer = solve_puzzle(w, h, puzzle, version);
             if (answer.empty())
