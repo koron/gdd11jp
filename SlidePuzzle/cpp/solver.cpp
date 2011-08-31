@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cassert>
 #include <cmath>
 #include <cstdio>
 #include <ctime>
@@ -265,6 +266,57 @@ public:
     }
 };
 
+class step2_t
+{
+public:
+    enum direction {
+        UP = -8,
+        LEFT = -1,
+        NONE = 0,
+        RIGHT = 1,
+        DOWN = 8
+    };
+
+    direction moved;
+    direction movable[5];
+    int move_index;
+    int pos;
+    int distance;
+
+    step2_t() : moved(NONE), move_index(-1), pos(0), distance(-1) {
+        movable[0] = NONE;
+        movable[1] = NONE;
+        movable[2] = NONE;
+        movable[3] = NONE;
+        movable[4] = NONE;
+    }
+
+    void reset(void) {
+        moved = NONE;
+        movable[0] = NONE;
+        movable[1] = NONE;
+        movable[2] = NONE;
+        movable[3] = NONE;
+        movable[4] = NONE;
+        move_index = -1;
+        pos = 0;
+        distance = -1;
+    }
+
+    bool is_empty(void) {
+        return  move_index < 0 || movable[move_index] == NONE;
+    }
+
+    bool has_movable(void) {
+        return move_index >= 0;
+    }
+
+    bool is_moved(void) {
+        return moved != NONE;
+    }
+
+};
+
     int
 operator - (const pos_t& a, const pos_t& b)
 {
@@ -307,7 +359,7 @@ get_md_sum(int w, const string& s, const string& final)
 }
 
     string
-depth_first(clock_t start, int depth, int w, int h,
+depth_first1(clock_t start, int depth, int w, int h,
         const string& first, const string& final)
 {
     if (first == final)
@@ -392,6 +444,153 @@ depth_first(clock_t start, int depth, int w, int h,
     return answer;
 }
 
+    bool
+get_movable2(step2_t& curr, const step2_t& prev, const char* board)
+{
+    int index = 0;
+    const step2_t::direction moved = prev.moved;
+    const int pos = prev.pos;
+    if (moved != step2_t::DOWN && board[pos + step2_t::UP] != '=')
+        curr.movable[index++] = step2_t::UP;
+    if (moved != step2_t::RIGHT && board[pos + step2_t::LEFT] != '=')
+        curr.movable[index++] = step2_t::LEFT;
+    if (moved != step2_t::LEFT && board[pos + step2_t::RIGHT] != '=')
+        curr.movable[index++] = step2_t::RIGHT;
+    if (moved != step2_t::UP && board[pos + step2_t::DOWN] != '=')
+        curr.movable[index++] = step2_t::DOWN;
+    curr.move_index = 0;
+    return index == 0;
+}
+
+    string
+depth_first2(clock_t start, int depth_limit, int w, int h,
+        const string& first, const string& final)
+{
+    if (first == final)
+    {
+        log_append("  -> No moves\n");
+        return string();
+    }
+
+    // Setup working board.
+    int pos = 0;
+    char board[64];
+    int pos2old[64];
+    ::memset(board, '=', sizeof(board));
+    ::memset(pos2old, 0, sizeof(pos2old));
+    for (int i = 0; i < h; ++i)
+    {
+        for (int j = 0; j < w; ++j)
+        {
+            int newpos = i * 8 + j + 9;
+            int oldpos = i * w + j;
+            char ch = board[newpos] = first[oldpos];
+            if (ch == '0')
+                pos = newpos;
+            pos2old[newpos] = oldpos;
+        }
+    }
+
+    vector<step2_t> steps(depth_limit + 1);
+    steps[0].pos = pos;
+    steps[0].distance = get_md_sum(w, first, final);
+
+    int count = 0;
+    int depth = 1;
+    while (true)
+    {
+        const step2_t& prev = steps[depth - 1];
+        step2_t& curr = steps[depth];
+
+        // Determine current action.
+        if (curr.is_empty())
+        {
+            bool backtrack = true;
+
+            // Check backtrack required.
+            if (!curr.has_movable())
+            {
+                // Setup movable values.
+                backtrack = get_movable2(curr, prev, board);
+            }
+
+            // Make backtrack.
+            if (backtrack)
+            {
+                if (curr.is_moved())
+                {
+                    // Revert board one step.
+                    board[curr.pos] = board[prev.pos];
+                    board[prev.pos] = '0';
+                }
+
+                curr.reset();
+                if (--depth > 0)
+                    continue;
+                else
+                {
+                    printf("  --- Not found: %d\n", count);
+                    return NOTFOUND;
+                }
+            }
+        }
+
+        step2_t::direction dir = curr.movable[curr.move_index++];
+        assert(curr.move_index < 5);
+        int new_pos = prev.pos + dir;
+        char ch = board[new_pos];
+
+        // Update distance.
+        int new_dist = prev.distance - get_md_val(w, ch, pos2old[new_pos])
+            + get_md_val(w, ch, pos2old[prev.pos]);
+
+        if (depth < depth_limit)
+        {
+            // Check lower boundary for curr.board.
+            ++count;
+            if (depth + new_dist <= depth_limit)
+            {
+                curr.moved = dir;
+                curr.pos = new_pos;
+                curr.distance = new_dist;
+                board[prev.pos] = ch;
+                board[curr.pos] = '0';
+                ++depth;
+            }
+        }
+        else if (new_dist == 0)
+        {
+            // Found the answer!
+            break;
+        }
+    }
+
+    log_append("  -> Found in depth %d at count %d\n", depth_limit, count);
+    string answer;
+    for (vector<step2_t>::iterator i = steps.begin(); i != steps.end(); ++i)
+    {
+        switch (i->moved)
+        {
+            case step2_t::UP:
+                answer += 'U';
+                break;
+            case step2_t::DOWN:
+                answer += 'D';
+                break;
+            case step2_t::RIGHT:
+                answer += 'R';
+                break;
+            case step2_t::LEFT:
+                answer += 'L';
+                break;
+        }
+    }
+    return answer;
+
+    return string();
+}
+
+
     string
 solve_puzzle2(const clock_t& start, int w, int h, const string& s)
 {
@@ -405,7 +604,7 @@ solve_puzzle2(const clock_t& start, int w, int h, const string& s)
     for (int depth = init_depth; ; depth += 2)
     {
         printf("  -- Depth #%d\n", depth);
-        string answer = depth_first(start, depth, w, h, s, final);
+        string answer = depth_first1(start, depth, w, h, s, final);
         if (answer != NOTFOUND)
             return answer;
     }
