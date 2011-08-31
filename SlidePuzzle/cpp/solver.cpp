@@ -387,7 +387,8 @@ depth_first(clock_t start, int depth, int w, int h,
         }
     }
 
-    log_append("  -> Found in depth %d at count %d\n", depth, count);
+    log_append("  -> Found in depth %d at count %d/%d\n", depth, count,
+            count2);
     string answer;
     for (vector<step_t>::const_iterator i = steps.begin();
             i != steps.end(); ++i)
