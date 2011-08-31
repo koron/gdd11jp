@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <cmath>
 #include <cstdio>
 #include <ctime>
 #include <deque>
@@ -284,6 +285,27 @@ get_distance(int w, int h, const string& s, const string& final)
     return p1 - p0;
 }
 
+    int
+get_md_val(int w, char ch, int i)
+{
+    int j = (ch >= 'A') ? (ch - 'A' + 9) : (ch - '1');
+    return ::abs((i % w) - (j % w)) + ::abs((i / w) - (j / w));
+}
+
+    int
+get_md_sum(int w, const string& s, const string& final)
+{
+    int md_sum = 0;
+    for (int i = 0, N = s.length(); i < N; ++i)
+    {
+        char ch = s[i];
+        if (ch == '=' || ch == '0')
+            continue;
+        md_sum += get_md_val(w, ch, i);
+    }
+    return md_sum;
+}
+
     string
 depth_first(clock_t start, int depth, int w, int h,
         const string& first, const string& final)
@@ -296,9 +318,10 @@ depth_first(clock_t start, int depth, int w, int h,
 
     vector<step_t> steps(depth);
     step_t first_step(first);
-    // TODO: setup first distance.
+    first_step.distance = get_md_sum(w, first, final);
 
     int count = 0;
+    int count2 = 0;
     int i = 0;
     while (true)
     {
@@ -328,9 +351,12 @@ depth_first(clock_t start, int depth, int w, int h,
             // back track.
             curr.reset();
             if (--i >= 0)
+            {
                 continue;
+            }
             else
             {
+                printf("    --> Try count: %d/%d\n", count, count2);
                 //log_append("  -> Not found!\n");
                 return NOTFOUND;
             }
@@ -339,20 +365,23 @@ depth_first(clock_t start, int depth, int w, int h,
         curr.last_move = curr.movable.back();
         curr.movable.pop_back();
         curr.set_board(apply_move(prev.board, prev.pos, w, curr.last_move));
-        // TODO: Update distance or some infos.
+
+        // Update distance.
+        char ch = curr.board[prev.pos];
+        curr.distance = prev.distance - get_md_val(w, ch, curr.pos)
+            + get_md_val(w, ch, prev.pos);
 
         if (i + 1 >= depth)
         {
             // Check does curr.board equal with final.
             ++count;
-            if ((count % 250000) == 0)
-                printf("  ITERATION %d\n", count);
-            if (curr.board == final)
+            if (curr.distance == 0)
                 break;
         }
         else
         {
             // Check lower boundary for curr.board.
+            ++count2;
             if (i + curr.distance <= depth)
                 ++i;
         }
@@ -371,8 +400,11 @@ solve_puzzle2(const clock_t& start, int w, int h, const string& s)
 {
     string final = get_final_state(s);
     int init_depth = get_distance(w, h, s, final);
-    if (init_depth == 0)
-        init_depth = 2;
+    int init_md = get_md_sum(w, s, final);
+    if ((init_md % 2) != (init_depth % 2))
+        init_depth = init_md + 1;
+    else
+        init_depth = init_md;
     for (int depth = init_depth; ; depth += 2)
     {
         printf("  -> Depth #%d\n", depth);
