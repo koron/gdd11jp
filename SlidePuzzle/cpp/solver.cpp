@@ -19,6 +19,9 @@ using std::vector;
 typedef pair<string, string> qitem;
 typedef char cell_t;
 
+static const cell_t FREE_CELL = (cell_t)0x80;
+static const cell_t WALL_CELL = (cell_t)0xFF;
+
 static bool enable_shrink = true;
 static int iteration_limit = 1500000;
 
@@ -451,23 +454,22 @@ get_movable2(step2_t& curr, const step2_t& prev, const cell_t* board)
     int index = 0;
     const step2_t::direction moved = prev.moved;
     const int pos = prev.pos;
-    if (moved != step2_t::DOWN && board[pos + step2_t::UP] != '=')
+    if (moved != step2_t::DOWN && board[pos + step2_t::UP] != WALL_CELL)
         curr.movable[index++] = step2_t::UP;
-    if (moved != step2_t::RIGHT && board[pos + step2_t::LEFT] != '=')
+    if (moved != step2_t::RIGHT && board[pos + step2_t::LEFT] != WALL_CELL)
         curr.movable[index++] = step2_t::LEFT;
-    if (moved != step2_t::LEFT && board[pos + step2_t::RIGHT] != '=')
+    if (moved != step2_t::LEFT && board[pos + step2_t::RIGHT] != WALL_CELL)
         curr.movable[index++] = step2_t::RIGHT;
-    if (moved != step2_t::UP && board[pos + step2_t::DOWN] != '=')
+    if (moved != step2_t::UP && board[pos + step2_t::DOWN] != WALL_CELL)
         curr.movable[index++] = step2_t::DOWN;
     curr.move_index = 0;
     return index == 0;
 }
 
     int
-get_md_val2(int w, cell_t ch, int i)
+get_md_val3(int w, int s, int e)
 {
-    int j = (ch >= 'A') ? (ch - 'A' + 9) : (ch - '1');
-    return ::abs((i % w) - (j % w)) + ::abs((i / w) - (j / w));
+    return ::abs((e & 0x7) - (s & 0x7)) + ::abs((e >> 3) - (s >> 3));
 }
 
     string
@@ -496,6 +498,26 @@ compose_answer(const vector<step2_t>& steps)
     return answer;
 }
 
+    void
+dump_board(const cell_t* board)
+{
+    printf("  -- FINAL BOARD:");
+    for (int i = 0; i < 64; ++i) {
+        if ((i % 8) == 0)
+            printf("\n  --- ");
+        char ch = '=';
+        cell_t cell = board[i];
+        if (cell >= 0 && cell < 9)
+            ch = '1' + cell;
+        else if (cell >= 9 && cell < 36)
+            ch = 'A' + cell - 9;
+        else if (cell == FREE_CELL)
+            ch = '0';
+        printf("%c", ch);
+    }
+    printf("\n");
+}
+
     string
 depth_first2(clock_t start, int depth_limit, int w, int h,
         const string& first, const string& final)
@@ -506,30 +528,43 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
         return string();
     }
 
+    // Setup expected positions.
+    int cell2pos[36];
+    for (int i = 0; i < 36; ++i)
+        cell2pos[i] = (i / w) * 8 + (i % w) + 9;
+
     // Setup working board.
-    int pos = 0;
+    int first_pos = 0;
     cell_t board[64];
-    int pos2old[64];
     for (int i = 0; i < 64; ++i)
-    {
-        board[i] = '=';
-        pos2old[i] = 0;
-    }
+        board[i] = WALL_CELL;
     for (int i = 0; i < h; ++i)
     {
         for (int j = 0; j < w; ++j)
         {
+            // Determine positions.
             int newpos = i * 8 + j + 9;
             int oldpos = i * w + j;
-            cell_t ch = board[newpos] = first[oldpos];
+            // Determine a cell value.
+            char ch = first[oldpos];
+            cell_t cell = WALL_CELL;
             if (ch == '0')
-                pos = newpos;
-            pos2old[newpos] = oldpos;
+            {
+                cell = FREE_CELL;
+                first_pos = newpos;
+            }
+            else if (ch >= '1' && ch <= '9')
+                cell = ch - '1';
+            else if (ch >= 'A' && ch <= 'Z')
+                cell = ch - 'A' + 9;
+            // Setup a cell of the board.
+            board[newpos] = cell;
         }
     }
 
+    // Init steps.
     vector<step2_t> steps(depth_limit + 1);
-    steps[0].pos = pos;
+    steps[0].pos = first_pos;
     steps[0].distance = get_md_sum(w, first, final);
 
     int count = 0;
@@ -558,7 +593,7 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
                 {
                     // Revert board one step.
                     board[curr.pos] = board[prev.pos];
-                    board[prev.pos] = '0';
+                    board[prev.pos] = FREE_CELL;
                 }
 
                 curr.reset();
@@ -573,17 +608,18 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
         if (curr.is_moved())
         {
             board[curr.pos] = board[prev.pos];
-            board[prev.pos] = '0';
+            board[prev.pos] = FREE_CELL;
         }
         curr.moved = curr.movable[curr.move_index++];
         curr.pos = prev.pos + curr.moved;
-        cell_t ch = board[prev.pos] = board[curr.pos];
-        board[curr.pos] = '0';
+        cell_t cell = board[prev.pos] = board[curr.pos];
+        board[curr.pos] = FREE_CELL;
 
         // Update distance.
+        int expected_pos = cell2pos[cell];
         curr.distance = prev.distance
-            - get_md_val2(w, ch, pos2old[curr.pos])
-            + get_md_val2(w, ch, pos2old[prev.pos]);
+            - get_md_val3(w, expected_pos, curr.pos)
+            + get_md_val3(w, expected_pos, prev.pos);
 
         if (depth < depth_limit)
         {
@@ -596,6 +632,7 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
             // Found the answer!
             log_append("  -> Found in depth %d at count %d\n", depth_limit,
                     count);
+            dump_board(board);
             return compose_answer(steps);
         }
         ++count;
