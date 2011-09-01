@@ -471,6 +471,32 @@ get_md_val2(int w, cell_t ch, int i)
 }
 
     string
+compose_answer(const vector<step2_t>& steps)
+{
+    string answer;
+    for (vector<step2_t>::const_iterator i = steps.begin();
+            i != steps.end(); ++i)
+    {
+        switch (i->moved)
+        {
+            case step2_t::UP:
+                answer += 'U';
+                break;
+            case step2_t::DOWN:
+                answer += 'D';
+                break;
+            case step2_t::RIGHT:
+                answer += 'R';
+                break;
+            case step2_t::LEFT:
+                answer += 'L';
+                break;
+        }
+    }
+    return answer;
+}
+
+    string
 depth_first2(clock_t start, int depth_limit, int w, int h,
         const string& first, const string& final)
 {
@@ -536,13 +562,10 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
                 }
 
                 curr.reset();
-                if (--depth > 0)
-                    continue;
+                if (--depth <= 0)
+                    break;
                 else
-                {
-                    printf("  --- Not found: %d\n", count);
-                    return NOTFOUND;
-                }
+                    continue;
             }
         }
 
@@ -565,40 +588,21 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
         if (depth < depth_limit)
         {
             // Check lower boundary for curr.board.
-            ++count;
             if (depth + curr.distance <= depth_limit)
                 ++depth;
         }
         else if (curr.distance == 0)
         {
             // Found the answer!
-            break;
+            log_append("  -> Found in depth %d at count %d\n", depth_limit,
+                    count);
+            return compose_answer(steps);
         }
+        ++count;
     }
 
-    log_append("  -> Found in depth %d at count %d\n", depth_limit, count);
-    string answer;
-    for (vector<step2_t>::iterator i = steps.begin(); i != steps.end(); ++i)
-    {
-        switch (i->moved)
-        {
-            case step2_t::UP:
-                answer += 'U';
-                break;
-            case step2_t::DOWN:
-                answer += 'D';
-                break;
-            case step2_t::RIGHT:
-                answer += 'R';
-                break;
-            case step2_t::LEFT:
-                answer += 'L';
-                break;
-        }
-    }
-    return answer;
-
-    return string();
+    printf("  --- Not found: %d\n", count);
+    return NOTFOUND;
 }
 
 
