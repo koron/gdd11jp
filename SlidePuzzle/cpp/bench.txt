@@ -1,4 +1,9 @@
 6,6,234GIM17=AC5D8=NB6PJKEL=V===H0WXYTZU
-    #4893 5.967(solomon)
+    #4893 5.967(A) 4.495(B)
 4,4,47135=289DECBA0F
-    #1389 10.19(babel)
+    #1389 7.090(B) 10.19(babel)
+
+環境:
+  * A: solomon, VC9, 32bit
+  * B: solomon, VC10, 64bit
+  * C: babel, VC9, 32bit
