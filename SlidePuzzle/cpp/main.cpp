@@ -12,8 +12,29 @@ using std::string;
 using std::istringstream;
 using std::ifstream;
 
+class puzzle_t
+{
+public:
+    int w;
+    int h;
+    string data;
+
+    explicit puzzle_t(const string& str) {
+        char ch;
+        istringstream is(str);
+        is >> w >> ch >> h >> ch >> data;
+    }
+
+    int rank() { return w * h; }
+
+    string solve(int version, int timeout_seconds) {
+        return solve_puzzle(w, h, data, version, timeout_seconds);
+    }
+
+};
+
     void
-solve_all(int version, const string& file)
+solve_all(int version, const string& file, int timeout_seconds)
 {
     log_open("output.log");
 
@@ -33,40 +54,46 @@ solve_all(int version, const string& file)
     FILE *fp = ::fopen("answers.txt", "wt");
     while (!ifs.eof())
     {
-        int w, h;
-        char ch;
-        string puzzle;
-
-        ifs >> w >> ch >> h >> ch >> puzzle;
-        int rank = w * h;
-
+        char buf[1024];
+        ifs.getline(buf, sizeof(buf));
+        string line(buf);
         ++lnum;
-        ++total;
-        log_append("#%d (%d, %d): %s\n", lnum, w, h, puzzle.c_str());
 
         string answer;
-        if (rank <= 16)
+        if (!line.empty())
         {
-            answer = solve_puzzle(w, h, puzzle, version);
-            if (answer.empty())
-                log_append("  => RETIRED\n");
-            else
+            puzzle_t puzzle(line);
+
+            ++total;
+            log_append("#%d (%d, %d): %s\n", lnum, puzzle.w, puzzle.h,
+                    puzzle.data.c_str());
+
+            if (puzzle.rank() <= 36)
             {
-                log_append("  => ANSWER: %s\n", answer.c_str());
-                ++solved;
+                answer = puzzle.solve(version, timeout_seconds);
+                if (answer.empty())
+                    log_append("  => RETIRED\n");
+                else
+                {
+                    log_append("  => ANSWER: %s\n", answer.c_str());
+                    ++solved;
+                }
             }
+            else
+                log_append("  => SKIPED\n");
         }
-        else
-            log_append("  => SKIPED\n");
+        else if (ifs.eof())
+            break;
+
         fprintf(fp, "%s\n", answer.c_str());
         fflush(fp);
     }
     fclose(fp);
 
     clock_t end = clock();
+    float rate = (total > 0) ? (float)solved * 100.0f / total : 0;
     log_append("Solved %d/%d (%.2f%%) in %f sec\n", solved, total,
-            (float)solved * 100.0f / total,
-            (float)(end - start) / CLOCKS_PER_SEC);
+            rate, (float)(end - start) / CLOCKS_PER_SEC);
 
     log_close();
 }
@@ -75,18 +102,30 @@ solve_all(int version, const string& file)
 main(int argc, char** argv)
 {
     int version = 0;
+    int timeout_seconds = 0;
     for (int i = 1; i < argc; ++i)
     {
         string a = argv[i];
+        bool has_next = i + 1 >= argc;
         if (a == string("-f"))
         {
-            if (i + 1 >= argc)
+            if (has_next)
             {
                 printf("option '-f' requires an argument.\n");
                 return 1;
             }
             i += 1;
-            solve_all(version, argv[i]);
+            solve_all(version, argv[i], timeout_seconds);
+        }
+        else if (a == string("-t") || a == string("--timeout"))
+        {
+            if (has_next)
+            {
+                printf("option '%s' requires an argument.\n", a.c_str());
+                return 1;
+            }
+            i += 1;
+            timeout_seconds = ::atoi(argv[i]);
         }
         else if (a == string("-1"))
             version = 1;
@@ -94,16 +133,10 @@ main(int argc, char** argv)
             version = 2;
         else
         {
+            puzzle_t p(a);
+            log_append("(%d, %d): %s\n", p.w, p.h, p.data.c_str());
 
-            int w, h;
-            char ch;
-            string puzzle;
-
-            istringstream iss(a);
-            iss >> w >> ch >> h >> ch >> puzzle;
-            log_append("(%d, %d): %s\n", w, h, puzzle.c_str());
-
-            string answer = solve_puzzle(w, h, puzzle, version);
+            string answer = p.solve(version, timeout_seconds);
             if (answer.empty())
                 log_append("  => RETIRED\n");
             else

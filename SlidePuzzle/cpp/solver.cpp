@@ -118,7 +118,12 @@ match_head_col(const string& a, const string& b, int w, int h)
 }
 
     string
-solve_puzzle1(const clock_t& start, int w, int h, const string& s)
+solve_puzzle1(
+        const clock_t& start,
+        int w,
+        int h,
+        const string& s,
+        int timeout_seconds)
 {
     deque<qitem> queue;
     queue.push_back(qitem(s, string("")));
@@ -168,7 +173,8 @@ solve_puzzle1(const clock_t& start, int w, int h, const string& s)
             if (shrinkable_height && match_head_row(next, final, w))
             {
                 string puzzle2 = string(next, w);
-                string answer2 = solve_puzzle1(start, w, h - 1, puzzle2);
+                string answer2 = solve_puzzle1(start, w, h - 1, puzzle2,
+                        timeout_seconds);
                 if (!answer2.empty())
                 {
                     new_hist += answer2;
@@ -184,7 +190,8 @@ solve_puzzle1(const clock_t& start, int w, int h, const string& s)
                 string puzzle3;
                 for (int i = 1, N = w * h; i < N; i += w)
                     puzzle3 += string(next, i, new_w);
-                string answer3 = solve_puzzle1(start, new_w, h, puzzle3);
+                string answer3 = solve_puzzle1(start, new_w, h, puzzle3,
+                        timeout_seconds);
                 if (!answer3.empty())
                 {
                     new_hist += answer3;
@@ -211,12 +218,15 @@ solve_puzzle1(const clock_t& start, int w, int h, const string& s)
             break;
         }
 
-        clock_t now = clock();
-        int sec = (now - start) / CLOCKS_PER_SEC;
-        if (sec >= 60)
+        if (timeout_seconds > 0)
         {
-            log_append("  OVER TIME\n");
-            break;
+            clock_t now = clock();
+            int sec = (now - start) / CLOCKS_PER_SEC;
+            if (sec >= timeout_seconds)
+            {
+                log_append("  OVER TIME\n");
+                break;
+            }
         }
     }
 
@@ -539,8 +549,14 @@ dump_board(const cell_t* board)
 }
 
     string
-depth_first2(clock_t start, int depth_limit, int w, int h,
-        const string& first, const string& final)
+depth_first2(
+        clock_t start,
+        int depth_limit,
+        int w,
+        int h,
+        const string& first,
+        const string& final,
+        int timeout_seconds)
 {
     if (first == final)
     {
@@ -657,17 +673,15 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
         }
         ++count;
 
-#if 0
-        if ((count & 0x3FFFFFF) == 0)
+        if (timeout_seconds > 0 && (count & 0x3FFFFFF) == 0)
         {
             int sec = (clock() - start) / CLOCKS_PER_SEC;
-            if (sec > 120)
+            if (sec > timeout_seconds)
             {
                 log_append("  -> Time over\n");
                 return TIMEOUT;
             }
         }
-#endif
     }
 
     printf("  --- Not found: %d\n", count);
@@ -676,7 +690,12 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
 
 
     string
-solve_puzzle2(const clock_t& start, int w, int h, const string& s)
+solve_puzzle2(
+        const clock_t& start,
+        int w,
+        int h,
+        const string& s,
+        int timeout_seconds)
 {
     string final = get_final_state(s);
     int init_depth = get_distance(w, s, final);
@@ -688,7 +707,8 @@ solve_puzzle2(const clock_t& start, int w, int h, const string& s)
     for (int depth = init_depth; ; depth += 2)
     {
         printf("  -- Depth #%d\n", depth);
-        string answer = depth_first2(start, depth, w, h, s, final);
+        string answer = depth_first2(start, depth, w, h, s, final,
+                timeout_seconds);
         if (answer != NOTFOUND)
             return answer;
     }
@@ -698,18 +718,23 @@ solve_puzzle2(const clock_t& start, int w, int h, const string& s)
 //
 
     string
-solve_puzzle(int w, int h, const string& s, int version)
+solve_puzzle(
+        int w,
+        int h,
+        const string& s,
+        int version,
+        int timeout_seconds)
 {
     clock_t start = ::clock();
     string answer;
     switch (version)
     {
         case 1:
-            answer = solve_puzzle1(start, w, h, s);
+            answer = solve_puzzle1(start, w, h, s, timeout_seconds);
             break;
         case 2:
         default:
-            answer = solve_puzzle2(start, w, h, s);
+            answer = solve_puzzle2(start, w, h, s, timeout_seconds);
     }
     clock_t end = ::clock();
     float sec = (float)(end - start) / CLOCKS_PER_SEC;
