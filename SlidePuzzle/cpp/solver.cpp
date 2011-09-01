@@ -227,6 +227,7 @@ solve_puzzle1(const clock_t& start, int w, int h, const string& s)
 //
 
 string NOTFOUND("NOTFOUND");
+string TIMEOUT("");
 
 class pos_t
 {
@@ -351,7 +352,7 @@ get_md_val(int w, char ch, int i)
 }
 
     int
-get_md_sum(int w, const string& s, const string& final)
+get_md_sum(int w, const string& s)
 {
     int md_sum = 0;
     for (int i = 0, N = (int)s.length(); i < N; ++i)
@@ -376,7 +377,7 @@ depth_first1(clock_t start, int depth, int w, int h,
 
     vector<step_t> steps(depth);
     step_t first_step(first);
-    first_step.distance = get_md_sum(w, first, final);
+    first_step.distance = get_md_sum(w, first);
 
     int count = 0;
     int i = 0;
@@ -480,7 +481,7 @@ get_movable2(step2_t& curr, const step2_t& prev, const cell_t* board)
 }
 
     int
-get_md_val3(int w, int s, int e)
+get_md_val3(int s, int e)
 {
     return ::abs((e & 0x7) - (s & 0x7)) + ::abs((e >> 3) - (s >> 3));
 }
@@ -527,9 +528,9 @@ dump_board(const cell_t* board)
         char ch = '=';
         cell_t cell = board[i];
         if (cell >= 0 && cell < 9)
-            ch = '1' + cell;
+            ch = (char)('1' + cell);
         else if (cell >= 9 && cell < 36)
-            ch = 'A' + cell - 9;
+            ch = (char)('A' + cell - 9);
         else if (cell == FREE_CELL)
             ch = '0';
         printf("%c", ch);
@@ -584,7 +585,7 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
     // Init steps.
     vector<step2_t> steps(depth_limit + 1);
     steps[0].pos = first_pos;
-    steps[0].distance = get_md_sum(w, first, final);
+    steps[0].distance = get_md_sum(w, first);
 
     int count = 0;
     int depth = 1;
@@ -637,8 +638,8 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
         // Update distance.
         int expected_pos = cell2pos[cell];
         curr.distance = prev.distance
-            - get_md_val3(w, expected_pos, curr.pos)
-            + get_md_val3(w, expected_pos, prev.pos);
+            - get_md_val3(expected_pos, curr.pos)
+            + get_md_val3(expected_pos, prev.pos);
 
         if (depth < depth_limit)
         {
@@ -655,6 +656,18 @@ depth_first2(clock_t start, int depth_limit, int w, int h,
             return compose_answer(steps);
         }
         ++count;
+
+#if 0
+        if ((count & 0x3FFFFFF) == 0)
+        {
+            int sec = (clock() - start) / CLOCKS_PER_SEC;
+            if (sec > 120)
+            {
+                log_append("  -> Time over\n");
+                return TIMEOUT;
+            }
+        }
+#endif
     }
 
     printf("  --- Not found: %d\n", count);
@@ -667,7 +680,7 @@ solve_puzzle2(const clock_t& start, int w, int h, const string& s)
 {
     string final = get_final_state(s);
     int init_depth = get_distance(w, s, final);
-    int init_md = get_md_sum(w, s, final);
+    int init_md = get_md_sum(w, s);
     if ((init_md % 2) != (init_depth % 2))
         init_depth = init_md + 1;
     else

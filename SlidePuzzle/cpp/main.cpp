@@ -20,7 +20,7 @@ solve_all(int version, const string& file)
     clock_t start = clock();
 
     // Drop first 2 lines.
-    std::ifstream ifs(file);
+    std::ifstream ifs(file.c_str());
     {
         string black_hole;
         std::getline(ifs, black_hole);
