@@ -282,17 +282,18 @@ public:
     };
 
     direction moved;
-    direction movable[5];
+    direction movable[6];
     int move_index;
     int pos;
     int distance;
 
-    step2_t() : moved(NONE), move_index(-1), pos(0), distance(-1) {
+    step2_t() : moved(NONE), move_index(0), pos(0), distance(-1) {
         movable[0] = NONE;
         movable[1] = NONE;
         movable[2] = NONE;
         movable[3] = NONE;
         movable[4] = NONE;
+        movable[5] = NONE;
     }
 
     void reset(void) {
@@ -302,17 +303,18 @@ public:
         movable[2] = NONE;
         movable[3] = NONE;
         movable[4] = NONE;
-        move_index = -1;
+        movable[5] = NONE;
+        move_index = 0;
         pos = 0;
         distance = -1;
     }
 
     bool is_empty(void) {
-        return  move_index < 0 || movable[move_index] == NONE;
+        return  movable[move_index] == NONE;
     }
 
     bool has_movable(void) {
-        return move_index >= 0;
+        return move_index > 0;
     }
 
     bool is_moved(void) {
@@ -451,18 +453,18 @@ depth_first1(clock_t start, int depth, int w, int h,
     bool
 get_movable2(step2_t& curr, const step2_t& prev, const cell_t* board)
 {
-    int index = 0;
     const step2_t::direction moved = prev.moved;
     const int pos = prev.pos;
+    int index = 0;
     if (moved != step2_t::DOWN && board[pos + step2_t::UP] != WALL_CELL)
-        curr.movable[index++] = step2_t::UP;
+        curr.movable[++index] = step2_t::UP;
     if (moved != step2_t::RIGHT && board[pos + step2_t::LEFT] != WALL_CELL)
-        curr.movable[index++] = step2_t::LEFT;
+        curr.movable[++index] = step2_t::LEFT;
     if (moved != step2_t::LEFT && board[pos + step2_t::RIGHT] != WALL_CELL)
-        curr.movable[index++] = step2_t::RIGHT;
+        curr.movable[++index] = step2_t::RIGHT;
     if (moved != step2_t::UP && board[pos + step2_t::DOWN] != WALL_CELL)
-        curr.movable[index++] = step2_t::DOWN;
-    curr.move_index = 0;
+        curr.movable[++index] = step2_t::DOWN;
+    curr.move_index = 1;
     return index == 0;
 }
 
