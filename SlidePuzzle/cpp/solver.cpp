@@ -17,7 +17,7 @@ using std::string;
 using std::vector;
 
 typedef pair<string, string> qitem;
-typedef char cell_t;
+typedef int cell_t;
 
 static const cell_t FREE_CELL = (cell_t)0x80;
 static const cell_t WALL_CELL = (cell_t)0xFF;
