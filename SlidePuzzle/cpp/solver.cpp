@@ -126,7 +126,7 @@ solve_puzzle1(
         int timeout_seconds)
 {
     deque<qitem> queue;
-    queue.push_back(qitem(s, string("")));
+    queue.push_back(qitem(s, string(" ")));
     set<string> hash;
     hash.insert(s);
     string final = get_final_state(s);
@@ -150,12 +150,27 @@ solve_puzzle1(
     {
         ++count;
 
+        if ((count & 0x3FFFF) == 0)
+        {
+            printf(" -- count:%d queue:%d hash:%d\n",
+                    count, queue.size(), hash.size());
+        }
+        if (timeout_seconds > 0)
+        {
+            clock_t now = clock();
+            int sec = (now - start) / CLOCKS_PER_SEC;
+            if (sec >= timeout_seconds)
+            {
+                log_append("  -> Time over\n");
+                break;
+            }
+        }
+
         const qitem& curr = queue.front();
         int pos = get_pos(curr.first);
 
         vector<char> movable;
-        char last_move = (curr.second.length() > 0)
-            ? *curr.second.rbegin() : ' ';
+        char last_move = *curr.second.rbegin();
         get_movable(movable, w, h, curr.first, pos, last_move);
         for (vector<char>::const_iterator i = movable.begin();
                 i != movable.end(); ++i)
@@ -166,7 +181,7 @@ solve_puzzle1(
 
             if (next == final) {
                 log_append("  -> Found at %d\n", count);
-                return new_hist;
+                return new_hist.substr(1);
             }
 
             // Check height shrinkable.
@@ -179,7 +194,7 @@ solve_puzzle1(
                 {
                     new_hist += answer2;
                     log_append("  -> Found at %d (height shrinked)\n", count);
-                    return new_hist;
+                    return new_hist.substr(1);
                 }
             }
 
@@ -196,11 +211,11 @@ solve_puzzle1(
                 {
                     new_hist += answer3;
                     log_append("  -> Found at %d (width shrinked)\n", count);
-                    return new_hist;
+                    return new_hist.substr(1);
                 }
             }
 
-            if (hash.count(next) == 0)
+            if (hash.find(next) == hash.end())
             {
                 hash.insert(next);
                 queue.push_back(qitem(next, new_hist));
@@ -208,26 +223,6 @@ solve_puzzle1(
         }
 
         queue.pop_front();
-
-        if ((count % 500000) == 0)
-            printf("  ITERATION %d\n", count);
-
-        if (count >= iteration_limit)
-        {
-            log_append("  OVER ITERATION\n");
-            break;
-        }
-
-        if (timeout_seconds > 0)
-        {
-            clock_t now = clock();
-            int sec = (now - start) / CLOCKS_PER_SEC;
-            if (sec >= timeout_seconds)
-            {
-                log_append("  OVER TIME\n");
-                break;
-            }
-        }
     }
 
     return string();
