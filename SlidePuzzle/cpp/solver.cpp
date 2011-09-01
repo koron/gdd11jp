@@ -456,6 +456,7 @@ get_movable2(step2_t& curr, const step2_t& prev, const cell_t* board)
     const step2_t::direction moved = prev.moved;
     const int pos = prev.pos;
     int index = 0;
+#if 1
     if (moved != step2_t::DOWN && board[pos + step2_t::UP] != WALL_CELL)
         curr.movable[++index] = step2_t::UP;
     if (moved != step2_t::RIGHT && board[pos + step2_t::LEFT] != WALL_CELL)
@@ -464,6 +465,16 @@ get_movable2(step2_t& curr, const step2_t& prev, const cell_t* board)
         curr.movable[++index] = step2_t::RIGHT;
     if (moved != step2_t::UP && board[pos + step2_t::DOWN] != WALL_CELL)
         curr.movable[++index] = step2_t::DOWN;
+#else
+    if (moved != step2_t::UP && board[pos + step2_t::DOWN] != WALL_CELL)
+        curr.movable[++index] = step2_t::DOWN;
+    if (moved != step2_t::LEFT && board[pos + step2_t::RIGHT] != WALL_CELL)
+        curr.movable[++index] = step2_t::RIGHT;
+    if (moved != step2_t::RIGHT && board[pos + step2_t::LEFT] != WALL_CELL)
+        curr.movable[++index] = step2_t::LEFT;
+    if (moved != step2_t::DOWN && board[pos + step2_t::UP] != WALL_CELL)
+        curr.movable[++index] = step2_t::UP;
+#endif
     curr.move_index = 1;
     return index == 0;
 }
@@ -478,6 +489,7 @@ get_md_val3(int w, int s, int e)
 compose_answer(const vector<step2_t>& steps)
 {
     string answer;
+    int cU = 0, cD = 0, cR = 0, cL = 0;
     for (vector<step2_t>::const_iterator i = steps.begin();
             i != steps.end(); ++i)
     {
@@ -485,18 +497,23 @@ compose_answer(const vector<step2_t>& steps)
         {
             case step2_t::UP:
                 answer += 'U';
+                ++cU;
                 break;
             case step2_t::DOWN:
                 answer += 'D';
+                ++cD;
                 break;
             case step2_t::RIGHT:
                 answer += 'R';
+                ++cR;
                 break;
             case step2_t::LEFT:
                 answer += 'L';
+                ++cL;
                 break;
         }
     }
+    printf("  -- L:%d R:%d U:%d D:%d\n", cL, cR, cU, cD);
     return answer;
 }
 
