@@ -13,14 +13,14 @@ using std::istringstream;
 using std::ifstream;
 
     void
-solve_all(int version)
+solve_all(int version, const string& file)
 {
     log_open("output.log");
 
     clock_t start = clock();
 
     // Drop first 2 lines.
-    std::ifstream ifs("problems.txt");
+    std::ifstream ifs(file);
     {
         string black_hole;
         std::getline(ifs, black_hole);
@@ -78,8 +78,16 @@ main(int argc, char** argv)
     for (int i = 1; i < argc; ++i)
     {
         string a = argv[i];
-        if (a == string("--all") || a == string("-a"))
-            solve_all(version);
+        if (a == string("-f"))
+        {
+            if (i + 1 >= argc)
+            {
+                printf("option '-f' requires an argument.\n");
+                return 1;
+            }
+            i += 1;
+            solve_all(version, argv[i]);
+        }
         else if (a == string("-1"))
             version = 1;
         else if (a == string("-2"))
