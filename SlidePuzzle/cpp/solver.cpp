@@ -543,8 +543,9 @@ dump_board(const cell_t* board)
     printf("\n");
 }
 
-    string
+    int
 depth_first2(
+        string& answer,
         clock_t start,
         int depth_limit,
         int w,
@@ -556,7 +557,8 @@ depth_first2(
     if (first == final)
     {
         log_append("  -> No moves\n");
-        return string();
+        answer = string("");
+        return 0;
     }
 
     // Setup expected positions.
@@ -598,6 +600,7 @@ depth_first2(
     steps[0].pos = first_pos;
     steps[0].distance = get_md_sum(w, first);
 
+    int min_dist = -1;
     int count = 0;
     int depth = 1;
     while (true)
@@ -664,8 +667,12 @@ depth_first2(
             log_append("  -> Found in depth %d at count %d\n", depth_limit,
                     count);
             dump_board(board);
-            return compose_answer(steps);
+            answer = compose_answer(steps);
+            return 0;
         }
+
+        if (min_dist < 0 || curr.distance < min_dist)
+            min_dist = curr.distance;
         ++count;
 
         if (timeout_seconds > 0 && (count & 0x3FFFFFF) == 0)
@@ -674,13 +681,15 @@ depth_first2(
             if (sec > timeout_seconds)
             {
                 log_append("  -> Time over\n");
-                return TIMEOUT;
+                answer = TIMEOUT;
+                return min_dist;
             }
         }
     }
 
     printf("  --- Not found: %d\n", count);
-    return NOTFOUND;
+    answer = NOTFOUND;
+    return min_dist;
 }
 
 
@@ -702,9 +711,10 @@ solve_puzzle2(
     for (int depth = init_depth; ; depth += 2)
     {
         printf("  -- Depth #%d\n", depth);
-        string answer = depth_first2(start, depth, w, h, s, final,
+        string answer;
+        int retval = depth_first2(answer, start, depth, w, h, s, final,
                 timeout_seconds);
-        if (answer != NOTFOUND)
+        if (retval == 0)
             return answer;
     }
 }
