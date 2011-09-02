@@ -1,4 +1,5 @@
 SRCS = main.cpp solver.cpp log.cpp
+ARCHIVE_SRC = tools/*.pl
 DEFINES = /D_CRT_SECURE_NO_WARNINGS=1 /D_BIND_TO_CURRENT_VCLIBS_VERSION=1
 CPPFLAGS = /EHsc $(DEFINES)
 
@@ -37,5 +38,5 @@ solver.exe : $(OBJS)
 	$(link) $(ldebug) $(conlflags) $(conlibsdll) \
 		/OUT:$@ $(LINKFLAGS) $(OBJS) $(RESOBJS) $(LIBS)
 
-src.zip : $(SRCS)
-	zip $@ $(SRCS)
+src.zip : $(SRCS) $(ARCHIVE_SRC)
+	zip $@ $(SRCS) $(ARCHIVE_SRC)
