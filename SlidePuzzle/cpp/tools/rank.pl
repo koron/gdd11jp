@@ -8,6 +8,7 @@ my %rank;
 <>; <>;
 while (<>) {
     chomp;
+    next if length($_) == 0;
     my ($w, $h, $s) = split ",";
     $rank{$w * $h} += 1;
 }

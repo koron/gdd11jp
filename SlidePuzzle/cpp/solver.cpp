@@ -232,7 +232,7 @@ solve_puzzle1(
 //
 
 string NOTFOUND("NOTFOUND");
-string TIMEOUT("");
+string TIMEOUT("TIMEOUT");
 
 class pos_t
 {
@@ -716,6 +716,8 @@ solve_puzzle2(
                 timeout_seconds);
         if (retval == 0)
             return answer;
+        else if (answer == TIMEOUT)
+            return string();
     }
 }
 
