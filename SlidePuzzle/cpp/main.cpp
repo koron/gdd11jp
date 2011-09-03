@@ -12,6 +12,8 @@ using std::string;
 using std::istringstream;
 using std::ifstream;
 
+static int rank_limit = 36;
+
 class puzzle_t
 {
 public:
@@ -68,7 +70,7 @@ solve_all(int version, const string& file, int timeout_seconds)
             log_append("#%d (%d, %d): %s\n", lnum, puzzle.w, puzzle.h,
                     puzzle.data.c_str());
 
-            if (puzzle.rank() <= 36)
+            if (puzzle.rank() <= rank_limit)
             {
                 answer = puzzle.solve(version, timeout_seconds);
                 if (answer.empty())
@@ -106,10 +108,10 @@ main(int argc, char** argv)
     for (int i = 1; i < argc; ++i)
     {
         string a = argv[i];
-        bool has_next = i + 1 >= argc;
+        bool no_next = i + 1 >= argc;
         if (a == string("-f"))
         {
-            if (has_next)
+            if (no_next)
             {
                 printf("option '-f' requires an argument.\n");
                 return 1;
@@ -119,13 +121,23 @@ main(int argc, char** argv)
         }
         else if (a == string("-t") || a == string("--timeout"))
         {
-            if (has_next)
+            if (no_next)
             {
                 printf("option '%s' requires an argument.\n", a.c_str());
                 return 1;
             }
             i += 1;
             timeout_seconds = ::atoi(argv[i]);
+        }
+        else if (a == string("-r") || a == string("--rank"))
+        {
+            if (no_next)
+            {
+                printf("option '%s' requires an argument.\n", a.c_str());
+                return 1;
+            }
+            i += 1;
+            rank_limit = ::atoi(argv[i]);
         }
         else if (a == string("-1"))
             version = 1;
