@@ -1,9 +1,17 @@
 6,6,234GIM17=AC5D8=NB6PJKEL=V===H0WXYTZU
     #4893 5.967(A) 4.495(B)
 4,4,47135=289DECBA0F
-    #1389 7.090(B) 10.19(babel)
+    #1389 7.090(B) 10.19(C)
+4,4,670324F81=EC5D9B
+    #533 77.811(B)
 
 環境:
   * A: solomon, VC9, 32bit
   * B: solomon, VC10, 64bit
   * C: babel, VC9, 32bit
+
+その他:
+6,6,40G9E31DJA56872F=BP===NZVWR=CUXQYTOI
+    #319 最難関
+5,5,82AI59L6E73CGD4BHNOF01MKJ
+    #140 力技対象。壁0

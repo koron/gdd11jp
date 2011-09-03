@@ -692,7 +692,7 @@ depth_first2(
         }
     }
 
-    printf("  --- Not found: %d\n", count);
+    printf("  --- Not found: %d (min=%d)\n", count, min_dist);
     answer = NOTFOUND;
     return min_dist;
 }
@@ -1035,7 +1035,7 @@ depth_first3(
         }
     }
 
-    printf("  --- Not found: %d\n", count);
+    printf("  --- Not found: %d (min=%d)\n", count, min_dist);
     answer = NOTFOUND;
     return min_dist;
 }
@@ -1093,10 +1093,10 @@ solve_puzzle(
             answer = solve_puzzle1(start, w, h, s, timeout_seconds);
             break;
         case 2:
-        default:
             answer = solve_puzzle2(start, w, h, s, timeout_seconds);
             break;
         case 3:
+        default:
             answer = solve_puzzle3(start, w, h, s, timeout_seconds);
             break;
     }
