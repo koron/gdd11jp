@@ -150,6 +150,11 @@ solve_puzzle1(
     {
         ++count;
 
+        if (count > 5000000)
+        {
+            log_append("  -> Over iteration\n");
+            break;
+        }
         if ((count & 0x3FFFF) == 0)
         {
             printf(" -- count:%d queue:%d hash:%d\n",
@@ -724,6 +729,354 @@ solve_puzzle2(
 ////////////////////////////////////////////////////////////////////////////
 //
 
+class postbl_t
+{
+public:
+    int _new2old[64];
+    int _old2new[36];
+
+    postbl_t(int w, int h)
+    {
+        for (int i = 0; i < 64; ++i)
+            _new2old[i] = -1;
+        for (int i = 0; i < 36; ++i)
+            _old2new[i] = -1;
+        for (int i = 0; i < h; ++i)
+        {
+            for (int j = 0; j < w; ++j)
+            {
+                int newpos = i * 8 + j + 9;
+                int oldpos = i * w + j;
+                _new2old[newpos] = oldpos;
+                _old2new[oldpos] = newpos;
+            }
+        }
+    }
+
+    int new2old(int i) { return _new2old[i]; }
+    int old2new(int i) { return _old2new[i]; }
+
+private:
+    postbl_t();
+    postbl_t(const postbl_t&);
+};
+
+class board_t
+{
+public:
+    int width;
+    int height;
+    int pos; // Position of '0'.
+    cell_t data[64];
+
+    board_t(int w, int h, const string& s) : width(w), height(h), pos(0)
+    {
+        for (int i = 0; i < 64; ++i)
+            data[i] = WALL_CELL;
+        for (int i = 0; i < height; ++i)
+        {
+            for (int j = 0; j < width; ++j)
+            {
+                int newpos = i * 8 + j + 9;
+                int oldpos = i * w + j;
+                // Determine a cell value.
+                char ch = s[oldpos];
+                cell_t cell = WALL_CELL;
+                if (ch == '0')
+                {
+                    cell = FREE_CELL;
+                    pos = newpos;
+                }
+                else if (ch >= '1' && ch <= '9')
+                    cell = ch - '1';
+                else if (ch >= 'A' && ch <= 'Z')
+                    cell = ch - 'A' + 9;
+                // Setup a cell of the board.
+                data[newpos] = cell;
+            }
+        }
+    }
+
+    cell_t get(int col, int row) const {
+        return data[col + (row << 3) + 9];
+    }
+
+    cell_t get(int pos) const {
+        return data[pos];
+    }
+
+    bool is_valid_cell(int pos) const {
+        cell_t cell = get(pos);
+        return cell != WALL_CELL;
+    }
+
+    void print(const string& title, const string& head) {
+        printf("%s", title.c_str());
+        for (int i = 0; i < 64; ++i) {
+            if ((i % 8) == 0)
+                printf("\n%s", head.c_str());
+            char ch = '=';
+            cell_t cell = data[i];
+            if (cell >= 0 && cell < 9)
+                ch = (char)('1' + cell);
+            else if (cell >= 9 && cell < 36)
+                ch = (char)('A' + cell - 9);
+            else if (cell == FREE_CELL)
+                ch = '0';
+            printf("%c", ch);
+        }
+        printf("\n");
+    }
+
+    cell_t move_freecell(int newpos) {
+        cell_t c = data[pos] = data[newpos];
+        data[newpos] = FREE_CELL;
+        pos = newpos;
+        return c;
+    }
+
+private:
+    board_t();
+    board_t(const board_t&);
+};
+
+class distbl_t
+{
+public:
+    postbl_t postbl;
+    int units[36][36];
+
+    distbl_t(const board_t& goal) : postbl(goal.width, goal.height) {
+        ::memset(units, 0, sizeof(units));
+        // Setup units table.
+        for (int i = 0; i < 36; ++i)
+        {
+            int newpos = postbl.old2new(i);
+            if (newpos < 0 || !goal.is_valid_cell(newpos))
+                continue;
+
+            set<int> seen;
+            seen.insert(newpos);
+            vector<int> seed;
+            seed.push_back(newpos);
+            int distance = 1;
+            while (true)
+            {
+                vector<int> detected;
+                if (detect_neighbor(detected, seed, seen, goal) <= 0)
+                    break;
+                for (vector<int>::const_iterator j = detected.begin();
+                        j != detected.end(); ++j)
+                {
+                    seen.insert(*j);
+                    units[i][postbl.new2old(*j)] = distance;
+                }
+                seed = detected;
+                ++distance;
+            }
+        }
+    }
+
+    int detect_neighbor(
+            vector<int>& detected,
+            const vector<int>& seed,
+            const set<int>& seen,
+            const board_t& board)
+    {
+        for (vector<int>::const_iterator i = seed.begin();
+                i != seed.end(); ++i)
+        {
+            int pos = *i;
+            detect_neighbor_item(pos - 8, detected, seen, board);
+            detect_neighbor_item(pos - 1, detected, seen, board);
+            detect_neighbor_item(pos + 1, detected, seen, board);
+            detect_neighbor_item(pos + 8, detected, seen, board);
+        }
+
+        return (int)detected.size();
+    }
+
+    void detect_neighbor_item(
+            int pos, 
+            vector<int>& detected,
+            const set<int>& seen,
+            const board_t& board)
+    {
+        if (pos >= 0 && pos < 64 && board.is_valid_cell(pos)
+                && seen.find(pos) == seen.end())
+            detected.push_back(pos);
+    }
+
+    int get_distance(const board_t& curr) {
+        int sum = 0;
+        int pos = 0;
+        for (int i = 0; i < curr.height; ++i)
+        {
+            for (int j = 0; j < curr.width; ++j)
+            {
+                cell_t c = curr.get(j, i);
+                if (c != WALL_CELL && c != FREE_CELL)
+                    sum += units[pos][c];
+                ++pos;
+            }
+        }
+        return sum;
+    }
+
+    int get_unit(int a, int b) {
+        return units[a][postbl.new2old(b)];
+    }
+
+private:
+    distbl_t();
+    distbl_t(const distbl_t&);
+};
+
+    int
+depth_first3(
+        string& answer,
+        clock_t start,
+        int depth_limit,
+        board_t& board,
+        distbl_t& distbl,
+        int timeout_seconds)
+{
+    // Init steps.
+    vector<step2_t> steps(depth_limit + 1);
+    steps[0].pos = board.pos;
+    steps[0].distance = distbl.get_distance(board);
+    if (steps[0].distance == 0)
+    {
+        log_append("  -> No moves\n");
+        answer = string("");
+        return 0;
+    }
+
+    int min_dist = -1;
+    int count = 0;
+    int depth = 1;
+    while (true)
+    {
+        // Check timeout first.
+        if (timeout_seconds > 0 && (count & 0x3FFFFFF) == 0)
+        {
+            int sec = (clock() - start) / CLOCKS_PER_SEC;
+            if (sec > timeout_seconds)
+            {
+                log_append("  -> Time over\n");
+                answer = TIMEOUT;
+                return min_dist;
+            }
+        }
+
+        // Determine step info.
+        const step2_t& prev = steps[depth - 1];
+        step2_t& curr = steps[depth];
+
+        // Determine current action.
+        if (curr.is_empty())
+        {
+            bool backtrack = true;
+
+            // Check backtrack required.
+            if (!curr.has_movable())
+            {
+                // Setup movable values.
+                backtrack = get_movable2(curr, prev, board.data);
+            }
+
+            // Make backtrack.
+            if (backtrack)
+            {
+                if (curr.is_moved())
+                {
+                    // Revert board one step.
+                    board.move_freecell(prev.pos);
+                }
+
+                curr.reset();
+                if (--depth <= 0)
+                    break;
+                else
+                    continue;
+            }
+        }
+
+        // Revert board for previous.
+        if (curr.is_moved())
+            board.move_freecell(prev.pos);
+        curr.moved = curr.movable[curr.move_index++];
+        curr.pos = prev.pos + curr.moved;
+        cell_t cell = board.move_freecell(curr.pos);
+        ++count;
+
+        // Update distance.
+        int distance = curr.distance = (prev.distance
+                - distbl.get_unit(cell, curr.pos)
+                + distbl.get_unit(cell, prev.pos));
+
+        if (min_dist < 0 || distance < min_dist)
+            min_dist = distance;
+
+        if (depth < depth_limit)
+        {
+            // Check lower boundary for curr.board.
+            if (depth + distance <= depth_limit)
+                ++depth;
+        }
+        else if (distance == 0)
+        {
+            // Found the answer!
+            log_append("  -> Found in depth %d at count %d\n", depth_limit,
+                    count);
+            board.print(string("  -- FINAL BOARD:"), string("  --- "));
+            answer = compose_answer(steps);
+            return 0;
+        }
+    }
+
+    printf("  --- Not found: %d\n", count);
+    answer = NOTFOUND;
+    return min_dist;
+}
+
+    string
+solve_puzzle3(
+        const clock_t& start,
+        int w,
+        int h,
+        const string& s,
+        int timeout_seconds)
+{
+    string final = get_final_state(s);
+    board_t board(w, h, s);
+    board_t goal(w, h, final);
+    distbl_t distbl(goal);
+
+    int init_depth = distbl.get_distance(board);
+
+    // fix init_depth even/odd.
+    int zero_dist = get_distance(w, s, final);
+    if ((init_depth % 2) != (zero_dist % 2))
+        init_depth += 1;
+
+    for (int depth = init_depth; ; depth += 2)
+    {
+        printf("  -- Depth #%d\n", depth);
+        string answer;
+        board_t work(w, h, s);
+        int retval = depth_first3(answer, start, depth, work, distbl,
+                timeout_seconds);
+        if (retval == 0)
+            return answer;
+        else if (answer == TIMEOUT)
+            return string();
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+
     string
 solve_puzzle(
         int w,
@@ -742,6 +1095,10 @@ solve_puzzle(
         case 2:
         default:
             answer = solve_puzzle2(start, w, h, s, timeout_seconds);
+            break;
+        case 3:
+            answer = solve_puzzle3(start, w, h, s, timeout_seconds);
+            break;
     }
     clock_t end = ::clock();
     float sec = (float)(end - start) / CLOCKS_PER_SEC;

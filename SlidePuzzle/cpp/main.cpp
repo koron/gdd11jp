@@ -131,6 +131,8 @@ main(int argc, char** argv)
             version = 1;
         else if (a == string("-2"))
             version = 2;
+        else if (a == string("-3"))
+            version = 3;
         else
         {
             puzzle_t p(a);
