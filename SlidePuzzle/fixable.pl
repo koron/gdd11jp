@@ -15,19 +15,29 @@ my $B = join('', qw(
 ========
 ));
 
-my $R = $B;
-for (my $row = 0; $row < 6; ++$row) {
-    for (my $col = 0; $col < 6; ++$col) {
-        my $pos = $row * 8 + $col + 9;
-        if (substr($B, $pos, 1) ne '=') {
-            my $fixable = &is_fixable($pos);
-            substr $R, $pos, 1, ($fixable ? "1" : "0");
-        }
-    }
-}
+my $R = &get_fixable_table($B);
+# Show fixable table.
 for (my $i = 0; $i < 8; ++$i) {
     my $s = substr $R, $i * 8, 8;
     print $s, "\n";
+}
+
+sub get_fixable_table {
+    my ($start) = @_;
+    my $retval = $start;
+
+    # Check each cells are fixable or not.
+    for (my $row = 0; $row < 6; ++$row) {
+        for (my $col = 0; $col < 6; ++$col) {
+            my $pos = $row * 8 + $col + 9;
+            if (substr($start, $pos, 1) ne '=') {
+                my $fixable = &is_fixable($pos);
+                substr $retval, $pos, 1, ($fixable ? "1" : "0");
+            }
+        }
+    }
+
+    return $retval;
 }
 
 sub is_fixable {
@@ -41,9 +51,38 @@ sub is_fixable {
         return 0;
     }
 
-    # TODO:
+    my @targets = grep {
+        not &is_wall($_);
+    } ($pos - 8, $pos - 1, $pos + 1, $pos + 8);
+    if (scalar(@targets) >= 2) {
+        my $pivot = shift @targets;
+        return &is_reachable($pivot, \@targets, [$pos]);
+    }
 
     return 1;
+}
+
+sub is_reachable {
+    my ($start, $targets, $fobidden) = @_;
+    my %seen = map { $_ => 1 } @$fobidden;
+    my %wants = map { $_ => 1 } @$targets;
+
+    my @queue = ($start);
+    while (scalar(@queue) > 0) {
+        my $curr = shift @queue;
+        my @search = ($curr - 8, $curr - 1, $curr + 1, $curr + 8);
+        foreach my $d (@search) {
+            next if exists $seen{$d} or &is_wall($d);
+            push @queue, $d;
+            $seen{$d} = 1;
+            if (exists $wants{$d}) {
+                delete $wants{$d};
+                return 1 if not scalar(%wants);
+            }
+        }
+    }
+
+    return 0;
 }
 
 sub is_cuttable {
