@@ -11,6 +11,8 @@ while (my $line1 = <IN1>) {
     last unless defined $line2;
     chomp $line1;
     chomp $line2;
+    $line1 = &trim($line1);
+    $line2 = &trim($line2);
     if ($line1 ne '') {
         if ($line2 ne '' and length($line2) < length($line1)) {
             print $line2, "\n";
@@ -23,3 +25,13 @@ while (my $line1 = <IN1>) {
 }
 close IN2;
 close IN1;
+
+sub trim {
+    my $retval = '';
+    my $s = $_[0];
+    while ($retval ne $s) {
+        $retval = $s;
+        $s =~ s/(LR|RL|DU|UD)//g;
+    }
+    return $s;
+}
