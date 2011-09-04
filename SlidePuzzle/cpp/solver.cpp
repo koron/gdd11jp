@@ -850,6 +850,27 @@ public:
         }
     }
 
+    string raw_state() const
+    {
+        string raw;
+        for (int i = 0; i < height; ++i)
+        {
+            for (int j = 0; j < width; ++j)
+            {
+                cell_t cell = data[i * 8 + j + 9];
+                if (cell == WALL_CELL)
+                    raw += '=';
+                else if (cell == FREE_CELL)
+                    raw += '0';
+                if (cell >= 0 && cell < 9)
+                    raw += (char)('1' + cell);
+                else if (cell >= 9 && cell < 36)
+                    raw += (char)('A' + cell - 9);
+            }
+        }
+        return raw;
+    }
+
 private:
     board_t();
     //board_t(const board_t&);
@@ -1099,6 +1120,22 @@ solve_puzzle3(
 ////////////////////////////////////////////////////////////////////////////
 //
 
+    int
+get_init_depth(
+        distbl_t& distbl,
+        const board_t& board,
+        const string& final)
+{
+    int init_depth = distbl.get_distance(board);
+
+    // fix init_depth even/odd.
+    int zero_dist = get_distance(board.width, board.raw_state(), final);
+    if ((init_depth % 2) != (zero_dist % 2))
+        init_depth += 1;
+
+    return init_depth;
+}
+
     string
 solve_puzzle4(
         const clock_t& start,
@@ -1112,13 +1149,7 @@ solve_puzzle4(
     board_t goal(w, h, final);
     distbl_t distbl(goal);
 
-    int init_depth = distbl.get_distance(board);
-
-    // fix init_depth even/odd.
-    int zero_dist = get_distance(w, s, final);
-    if ((init_depth % 2) != (zero_dist % 2))
-        init_depth += 1;
-
+    int init_depth = get_init_depth(distbl, board, final);
     string prefix;
 
     for (int depth = init_depth; ; depth += 2)
@@ -1136,12 +1167,12 @@ solve_puzzle4(
             return string();
 
         int sec = (clock() - start2) / CLOCKS_PER_SEC;
-        if (sec > 10)
+        if (sec > 5)
         {
             prefix += min_answer;
             board.apply(min_answer);
             board.print(string("  -- FORCE FORWARD:"), string("  --- "));
-            depth = retval;
+            depth = get_init_depth(distbl, board, final);
         }
     }
 }
