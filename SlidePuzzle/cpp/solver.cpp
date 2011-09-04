@@ -524,7 +524,7 @@ compose_answer(const vector<step2_t>& steps)
                 break;
         }
     }
-    printf("  -- L:%d R:%d U:%d D:%d\n", cL, cR, cU, cD);
+    //printf("  -- L:%d R:%d U:%d D:%d\n", cL, cR, cU, cD);
     return answer;
 }
 
@@ -835,9 +835,24 @@ public:
         return c;
     }
 
+    void apply(const string& moves) {
+        for (string::const_iterator i = moves.begin(); i != moves.end(); ++i)
+        {
+            int diff = 0;
+            switch (*i) {
+                case 'U': diff = -8; break;
+                case 'L': diff = -1; break;
+                case 'R': diff = 1; break;
+                case 'D': diff = 8; break;
+            }
+            if (diff != 0)
+                move_freecell(pos + diff);
+        }
+    }
+
 private:
     board_t();
-    board_t(const board_t&);
+    //board_t(const board_t&);
 };
 
 class distbl_t
@@ -939,7 +954,8 @@ depth_first3(
         int depth_limit,
         board_t& board,
         distbl_t& distbl,
-        int timeout_seconds)
+        int timeout_seconds,
+        string* min_answer = NULL)
 {
     // Init steps.
     vector<step2_t> steps(depth_limit + 1);
@@ -1016,7 +1032,11 @@ depth_first3(
                 + distbl.get_unit(cell, prev.pos));
 
         if (min_dist < 0 || distance < min_dist)
+        {
             min_dist = distance;
+            if (min_answer)
+                *min_answer = compose_answer(steps);
+        }
 
         if (depth < depth_limit)
         {
@@ -1036,6 +1056,8 @@ depth_first3(
     }
 
     printf("  --- Not found: %d (min=%d)\n", count, min_dist);
+    if (min_answer)
+        printf("  ---- %s\n", min_answer->c_str());
     answer = NOTFOUND;
     return min_dist;
 }
@@ -1078,6 +1100,56 @@ solve_puzzle3(
 //
 
     string
+solve_puzzle4(
+        const clock_t& start,
+        int w,
+        int h,
+        const string& s,
+        int timeout_seconds)
+{
+    string final = get_final_state(s);
+    board_t board(w, h, s);
+    board_t goal(w, h, final);
+    distbl_t distbl(goal);
+
+    int init_depth = distbl.get_distance(board);
+
+    // fix init_depth even/odd.
+    int zero_dist = get_distance(w, s, final);
+    if ((init_depth % 2) != (zero_dist % 2))
+        init_depth += 1;
+
+    string prefix;
+
+    for (int depth = init_depth; ; depth += 2)
+    {
+        printf("  -- Depth #%d\n", depth);
+        string answer;
+        string min_answer;
+        board_t work(board);
+        clock_t start2 = ::clock();
+        int retval = depth_first3(answer, start, depth, work, distbl,
+                timeout_seconds, &min_answer);
+        if (retval == 0)
+            return prefix + answer;
+        else if (answer == TIMEOUT)
+            return string();
+
+        int sec = (clock() - start2) / CLOCKS_PER_SEC;
+        if (sec > 10)
+        {
+            prefix += min_answer;
+            board.apply(min_answer);
+            board.print(string("  -- FORCE FORWARD:"), string("  --- "));
+            depth = retval;
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+
+    string
 solve_puzzle(
         int w,
         int h,
@@ -1098,6 +1170,9 @@ solve_puzzle(
         case 3:
         default:
             answer = solve_puzzle3(start, w, h, s, timeout_seconds);
+            break;
+        case 4:
+            answer = solve_puzzle4(start, w, h, s, timeout_seconds);
             break;
     }
     clock_t end = ::clock();
