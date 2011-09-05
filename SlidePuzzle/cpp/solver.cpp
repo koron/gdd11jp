@@ -1090,6 +1090,16 @@ depth_first3(
                 - distbl.get_unit(cell, curr.pos)
                 + distbl.get_unit(cell, prev.pos));
 
+        if (distance == 0)
+        {
+            // Found the answer!
+            log_append("  -> Found in depth %d at count %d\n", depth_limit,
+                    count);
+            board.print(string("  -- FINAL BOARD:"), string("  --- "));
+            answer = compose_answer(steps);
+            return 0;
+        }
+
         if (min_dist < 0 || distance < min_dist)
         {
             min_dist = distance;
@@ -1101,20 +1111,12 @@ depth_first3(
             ++count2;
         }
 
+        // Prepare for next step.
         if (depth < depth_limit)
         {
             // Check lower boundary for curr.board.
             if (depth + distance <= depth_limit)
                 ++depth;
-        }
-        else if (distance == 0)
-        {
-            // Found the answer!
-            log_append("  -> Found in depth %d at count %d\n", depth_limit,
-                    count);
-            board.print(string("  -- FINAL BOARD:"), string("  --- "));
-            answer = compose_answer(steps);
-            return 0;
         }
     }
 
