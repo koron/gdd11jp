@@ -1241,6 +1241,42 @@ solve_puzzle4(
 //
 
     string
+solve_puzzle5(
+        const clock_t& start,
+        int w,
+        int h,
+        const string& s,
+        int timeout_seconds)
+{
+    string final = get_final_state(s);
+    board_t board(w, h, s);
+    board_t goal(w, h, final);
+    distbl_t distbl(board);
+
+    int init_depth = distbl.get_distance(goal);
+
+    // fix init_depth even/odd.
+    int zero_dist = get_distance(w, s, final);
+    if ((init_depth % 2) != (zero_dist % 2))
+        init_depth += 1;
+
+    for (int depth = init_depth; ; depth += 2)
+    {
+        printf("  -- Depth #%d\n", depth);
+        string answer;
+        board_t work(goal);
+        int retval = depth_first3(answer, start, depth, work, distbl,
+                timeout_seconds);
+        if (retval == 0)
+            return answer;
+        else if (answer == TIMEOUT)
+            return string();
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+    string
 solve_puzzle(
         int w,
         int h,
@@ -1264,6 +1300,9 @@ solve_puzzle(
             break;
         case 4:
             answer = solve_puzzle4(start, w, h, s, timeout_seconds);
+            break;
+        case 5:
+            answer = solve_puzzle5(start, w, h, s, timeout_seconds);
             break;
     }
     clock_t end = ::clock();

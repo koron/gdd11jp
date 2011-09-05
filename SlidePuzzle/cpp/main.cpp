@@ -147,6 +147,8 @@ main(int argc, char** argv)
             version = 3;
         else if (a == string("-4"))
             version = 4;
+        else if (a == string("-5"))
+            version = 5;
         else
         {
             puzzle_t p(a);
