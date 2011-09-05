@@ -1182,6 +1182,7 @@ solve_puzzle4(
             if (last_retval == retval)
             {
                 depth_timeout *= 4.0f;
+                depth += retval - 2;
                 printf("  -- Extend depth's timeout: %f\n",depth_timeout);
             }
             else
