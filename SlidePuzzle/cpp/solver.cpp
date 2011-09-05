@@ -1159,6 +1159,8 @@ solve_puzzle4(
 
     int init_depth = get_init_depth(distbl, board, final);
     string prefix;
+    int last_retval = 0;
+    float depth_timeout = 0.5f;
 
     for (int depth = init_depth; ; depth += 2)
     {
@@ -1174,13 +1176,22 @@ solve_puzzle4(
         else if (answer == TIMEOUT)
             return string();
 
-        int sec = (clock() - start2) / CLOCKS_PER_SEC;
-        if (sec > 5)
+        float sec = (float)(clock() - start2) / CLOCKS_PER_SEC;
+        if (sec >= depth_timeout)
         {
-            prefix += min_answer;
-            board.apply(min_answer);
-            board.print(string("  -- FORCE FORWARD:"), string("  --- "));
-            depth = get_init_depth(distbl, board, final) - 2;
+            if (last_retval == retval)
+            {
+                depth_timeout *= 4.0f;
+                printf("  -- Extend depth's timeout: %f\n",depth_timeout);
+            }
+            else
+            {
+                last_retval = retval;
+                prefix += min_answer;
+                board.apply(min_answer);
+                board.print(string("  -- FORCE FORWARD:"), string("  --- "));
+                depth = get_init_depth(distbl, board, final) - 2;
+            }
         }
     }
 }
