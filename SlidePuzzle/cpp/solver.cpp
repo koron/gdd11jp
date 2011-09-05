@@ -963,6 +963,43 @@ public:
         return units[a][postbl.new2old(b)];
     }
 
+    void print(const string& title, const string& head) {
+        printf("%s\n", title.c_str());
+        for (int i = 0; i < 36; i += 6) {
+            vector<string> buf(6);
+            if (i != 0) {
+                printf("\n");
+            }
+            for (int j = 0; j < 6; ++j) {
+                buf[j] += head;
+            }
+            for (int j = 0; j < 6; ++j) {
+                int* p = units[i + j];
+                for (int k = 0; k < 36; k += 6) {
+                    int row = k / 6;
+                    if (j != 0) {
+                        buf[row] += ' ';
+                    }
+                    for (int l = 0; l < 6; ++l) {
+                        char ch = 'X';
+                        int u = p[k + l];
+                        if (u >= 0) {
+                            if (u < 10) {
+                                ch = (char)(u + '0');
+                            } else if (u < 36) {
+                                ch = (char)(u - 10 + 'A');
+                            }
+                        }
+                        buf[row] += ch;
+                    }
+                }
+            }
+            for (int j = 0; j < 6; ++j) {
+                printf("%s\n", buf[j].c_str());
+            }
+        }
+    }
+
 private:
     distbl_t();
     distbl_t(const distbl_t&);
@@ -1156,6 +1193,7 @@ solve_puzzle4(
     board_t board(w, h, s);
     board_t goal(w, h, final);
     distbl_t distbl(goal);
+    //distbl.print(string("  -- DISTANCE TABLE:"), string("  --- "));
 
     int init_depth = get_init_depth(distbl, board, final);
     string prefix;
