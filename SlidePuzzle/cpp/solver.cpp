@@ -991,6 +991,7 @@ depth_first3(
 
     int min_dist = -1;
     int count = 0;
+    int count2 = 0;
     int depth = 1;
     while (true)
     {
@@ -1058,6 +1059,10 @@ depth_first3(
             if (min_answer)
                 *min_answer = compose_answer(steps);
         }
+        else if (distance == min_dist)
+        {
+            ++count2;
+        }
 
         if (depth < depth_limit)
         {
@@ -1078,7 +1083,10 @@ depth_first3(
 
     printf("  --- Not found: %d (min=%d)\n", count, min_dist);
     if (min_answer)
+    {
         printf("  ---- %s\n", min_answer->c_str());
+        printf("  ---- Others:%d\n", count2);
+    }
     answer = NOTFOUND;
     return min_dist;
 }
@@ -1172,7 +1180,7 @@ solve_puzzle4(
             prefix += min_answer;
             board.apply(min_answer);
             board.print(string("  -- FORCE FORWARD:"), string("  --- "));
-            depth = get_init_depth(distbl, board, final);
+            depth = get_init_depth(distbl, board, final) - 2;
         }
     }
 }
