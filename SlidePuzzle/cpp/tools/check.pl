@@ -31,7 +31,7 @@ sub unsolved_filter {
             $result = $retval ? 'OK' : 'NG';
         }
 
-        printf("#%-4d %s\n", $num, $result);
+        printf("#%-4d %s - %s\n", $num, $result, $p);
         if (defined $msg) {
             foreach my $m (@$msg) {
                 printf("  %s\n", $m);
@@ -91,7 +91,7 @@ sub chekc_root {
         $pos = $newpos;
     }
     if ($s ne $final) {
-        return (0, ['unmatch']);
+        return (0, ['unmatched', '  actually: '.$s, '  expected: '.$final]);
     } else {
         return 1;
     }

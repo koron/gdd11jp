@@ -1112,13 +1112,14 @@ depth_first3(
             return 0;
         }
 
-        if (min_answer && distance <= min_dist)
+        if (distance <= min_dist)
         {
             if (distance < min_dist || depth < min_depth)
             {
                 min_dist = distance;
                 min_depth = depth;
-                *min_answer = compose_answer(steps);
+                if (min_answer)
+                    *min_answer = compose_answer(steps);
             }
         }
 
