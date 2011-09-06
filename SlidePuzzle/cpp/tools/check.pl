@@ -21,7 +21,7 @@ sub check_all {
     while (my $p = <IN1>) {
         $p =~ s/\s+$//;
         my $ans = <IN2>;
-        $ans =~ s/\s+$//;
+        $ans =~ s/\s+$// if defined $ans;
 
         my $result = 'NONE';
         my $msg;
