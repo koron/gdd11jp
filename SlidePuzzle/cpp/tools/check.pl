@@ -18,6 +18,7 @@ sub check_all {
 
     <IN1>; <IN1>;
     my $num = 1;
+    my @count = (0, 0, 0);
     while (my $p = <IN1>) {
         $p =~ s/\s+$//;
         my $ans = <IN2>;
@@ -28,7 +29,15 @@ sub check_all {
         if (defined $ans and length($ans) > 0) {
             my $retval;
             ($retval, $msg) = &chekc_root($p, $ans);
-            $result = $retval ? 'OK' : 'NG';
+            if ($retval) {
+                $result = 'OK';
+                $count[0] += 1;
+            } else {
+                $result = 'NG';
+                $count[1] += 1;
+            }
+        } else {
+            $count[2] += 1;
         }
 
         printf("#%-4d %s - %s\n", $num, $result, $p);
@@ -39,6 +48,7 @@ sub check_all {
         }
         ++$num;
     }
+    printf("  OK:%d NG:%d: NONE:%d TOTAL:%d\n", @count, $num - 1);
 
     close IN2;
     close IN1;
