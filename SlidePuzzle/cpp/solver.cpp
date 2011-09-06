@@ -1042,11 +1042,14 @@ depth_first3(
         return 0;
     }
 
+    // Setup loop parameters.
     clock_t start_depth = clock();
     int min_dist = INT_MAX;
     int min_depth = 0;
     int64_t count = 0;
+    int64_t flood = 0;
     int depth = 1;
+
     while (true)
     {
         // Check timeout first.
@@ -1100,13 +1103,20 @@ depth_first3(
         curr.moved = curr.movable[curr.move_index++];
         curr.pos = prev.pos + curr.moved;
         cell_t cell = board.move_freecell(curr.pos);
-        ++count;
+
+        // Increment counter.
+        if (++count == 0)
+        {
+            ++flood;
+            printf(" --- Flood counter #%lld\n", flood);
+        }
 
         // Update distance.
         int distance = curr.distance = (prev.distance
                 - distbl.get_unit(cell, curr.pos)
                 + distbl.get_unit(cell, prev.pos));
 
+        // Goal check.
         if (distance == 0)
         {
             // Found the answer!
@@ -1123,6 +1133,7 @@ depth_first3(
             return 0;
         }
 
+        // Determine interrupt candidate.
         if (distance <= min_dist)
         {
             if (distance < min_dist || depth < min_depth)
