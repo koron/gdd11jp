@@ -5,12 +5,12 @@ use strict;
 use warnings;
 
 if (scalar(@ARGV) >= 2) {
-    &unsolved_filter($ARGV[0], $ARGV[1]);
+    &check_all($ARGV[0], $ARGV[1]);
 } else {
-    print "USAGE: $0 [problem] [answer]\n";
+    print "USAGE: $0 {problem} {answer}\n";
 }
 
-sub unsolved_filter {
+sub check_all {
     my ($problem, $answer) = @_;
 
     open IN1, $problem or die "$!\n";
