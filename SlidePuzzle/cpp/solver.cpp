@@ -885,10 +885,15 @@ private:
 class distbl_t
 {
 public:
+    int width, height;
     postbl_t postbl;
     int units[36][36];
 
-    distbl_t(const board_t& goal) : postbl(goal.width, goal.height) {
+    distbl_t(const board_t& goal) :
+        width(goal.width),
+        height(goal.height),
+        postbl(goal.width, goal.height)
+    {
         ::memset(units, 0, sizeof(units));
         // Setup units table.
         for (int i = 0; i < 36; ++i)
@@ -961,7 +966,7 @@ public:
             {
                 cell_t c = curr.get(j, i);
                 if (c != WALL_CELL && c != FREE_CELL)
-                    sum += units[pos][c];
+                    sum += units[c][pos];
                 ++pos;
             }
         }
@@ -974,22 +979,24 @@ public:
 
     void print(const string& title, const string& head) {
         printf("%s\n", title.c_str());
-        for (int i = 0; i < 36; i += 6) {
-            vector<string> buf(6);
+        int all = width * height;
+        for (int i = 0; i < all; i += width) {
+            vector<string> buf(height);
             if (i != 0) {
                 printf("\n");
             }
-            for (int j = 0; j < 6; ++j) {
+            for (int j = 0; j < height; ++j) {
                 buf[j] += head;
             }
-            for (int j = 0; j < 6; ++j) {
+
+            for (int j = 0; j < width; ++j) {
                 int* p = units[i + j];
-                for (int k = 0; k < 36; k += 6) {
-                    int row = k / 6;
+                for (int k = 0; k < all; k += width) {
+                    int row = k / width;
                     if (j != 0) {
                         buf[row] += ' ';
                     }
-                    for (int l = 0; l < 6; ++l) {
+                    for (int l = 0; l < width; ++l) {
                         char ch = 'X';
                         int u = p[k + l];
                         if (u >= 0) {
@@ -1003,7 +1010,7 @@ public:
                     }
                 }
             }
-            for (int j = 0; j < 6; ++j) {
+            for (int j = 0; j < height; ++j) {
                 printf("%s\n", buf[j].c_str());
             }
         }
@@ -1107,8 +1114,12 @@ depth_first3(
             printf("  --- Found at count %lld in %f sec\n", count, sec);
             log_append("  -> Found in depth %d at count %lld\n", depth_limit,
                     count);
-            //board.print(string("  -- FINAL BOARD:"), string("  --- "));
             answer = compose_answer(steps);
+#if 0
+            board.print(string("  -- FINAL BOARD:"), string("  --- "));
+            printf("  -- MOVE: %s\n", answer.c_str());
+            printf("  -- DISTANCE: %d\n", distbl.get_distance(board));
+#endif
             return 0;
         }
 
