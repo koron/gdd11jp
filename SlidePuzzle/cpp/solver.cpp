@@ -8,6 +8,12 @@
 #include <string>
 #include <vector>
 
+#if defined(_MSC_VER) && _MSC_VER < 1600
+typedef __int64 int64_t;
+#else
+#include <cstdint>
+#endif
+
 #include "log.hpp"
 
 using std::deque;
@@ -890,6 +896,9 @@ public:
             int newpos = postbl.old2new(i);
             if (newpos < 0 || !goal.is_valid_cell(newpos))
                 continue;
+            cell_t c = goal.get(i % goal.width, i / goal.width);
+            if (c == FREE_CELL)
+                continue;
 
             set<int> seen;
             seen.insert(newpos);
@@ -905,7 +914,7 @@ public:
                         j != detected.end(); ++j)
                 {
                     seen.insert(*j);
-                    units[i][postbl.new2old(*j)] = distance;
+                    units[c][postbl.new2old(*j)] = distance;
                 }
                 seed = detected;
                 ++distance;
@@ -1026,14 +1035,15 @@ depth_first3(
         return 0;
     }
 
-    int min_dist = -1;
-    int count = 0;
-    int count2 = 0;
+    clock_t start_depth = clock();
+    int min_dist = INT_MAX;
+    int min_depth = 0;
+    int64_t count = 0;
     int depth = 1;
     while (true)
     {
         // Check timeout first.
-        if (timeout_seconds > 0 && (count & 0x3FFFFFF) == 0)
+        if (timeout_seconds > 0 && (count & 0x3FFFFFFLL) == 0)
         {
             int sec = (clock() - start) / CLOCKS_PER_SEC;
             if (sec > timeout_seconds)
@@ -1093,22 +1103,23 @@ depth_first3(
         if (distance == 0)
         {
             // Found the answer!
-            log_append("  -> Found in depth %d at count %d\n", depth_limit,
+            float sec = (float)(clock() - start_depth) / CLOCKS_PER_SEC;
+            printf("  --- Found at count %lld in %f sec\n", count, sec);
+            log_append("  -> Found in depth %d at count %lld\n", depth_limit,
                     count);
-            board.print(string("  -- FINAL BOARD:"), string("  --- "));
+            //board.print(string("  -- FINAL BOARD:"), string("  --- "));
             answer = compose_answer(steps);
             return 0;
         }
 
-        if (min_dist < 0 || distance < min_dist)
+        if (min_answer && distance <= min_dist)
         {
-            min_dist = distance;
-            if (min_answer)
+            if (distance < min_dist || depth < min_depth)
+            {
+                min_dist = distance;
+                min_depth = depth;
                 *min_answer = compose_answer(steps);
-        }
-        else if (distance == min_dist)
-        {
-            ++count2;
+            }
         }
 
         // Prepare for next step.
@@ -1120,11 +1131,11 @@ depth_first3(
         }
     }
 
-    printf("  --- Not found: %d (min=%d)\n", count, min_dist);
+    float sec = (float)(clock() - start_depth) / CLOCKS_PER_SEC;
+    printf("  --- Not found: %lld (min=%d, sec=%f)\n", count, min_dist, sec);
     if (min_answer)
     {
         printf("  ---- %s\n", min_answer->c_str());
-        printf("  ---- Others:%d\n", count2);
     }
     answer = NOTFOUND;
     return min_dist;
@@ -1241,6 +1252,24 @@ solve_puzzle4(
 //
 
     string
+reverse_answer(const string& answer)
+{
+    string reversed;
+    for (string::const_reverse_iterator i = answer.rbegin();
+            i != answer.rend(); ++i)
+    {
+        switch (*i)
+        {
+            case 'L': reversed += 'R'; break;
+            case 'R': reversed += 'L'; break;
+            case 'U': reversed += 'D'; break;
+            case 'D': reversed += 'U'; break;
+        }
+    }
+    return reversed;
+}
+
+    string
 solve_puzzle5(
         const clock_t& start,
         int w,
@@ -1268,7 +1297,7 @@ solve_puzzle5(
         int retval = depth_first3(answer, start, depth, work, distbl,
                 timeout_seconds);
         if (retval == 0)
-            return answer;
+            return reverse_answer(answer);
         else if (answer == TIMEOUT)
             return string();
     }
