@@ -9,8 +9,8 @@ open IN2, $ARGV[1] or die "$!\n";
 while (my $line1 = <IN1>) {
     my $line2 = <IN2>;
     last unless defined $line2;
-    chomp $line1;
-    chomp $line2;
+    $line1 =~ s/\s+$//g;
+    $line2 =~ s/\s+$//g;
     $line1 = &trim($line1);
     $line2 = &trim($line2);
     if ($line1 ne '') {

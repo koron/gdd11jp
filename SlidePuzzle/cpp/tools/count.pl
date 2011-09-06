@@ -16,7 +16,7 @@ my $num = 0;
 my $total = 0;
 
 while (<>) {
-    chomp;
+    s/\s+$//;
     ++$num if length > 0;
     ++$total;
     for my $ch (split //) {
