@@ -11,7 +11,7 @@
 #if defined(_MSC_VER) && _MSC_VER < 1600
 typedef __int64 int64_t;
 #else
-#include <cstdint>
+#include <stdint.h>
 #endif
 
 #include "log.hpp"
