@@ -1112,7 +1112,7 @@ depth_first3(
             // Found the answer!
             float sec = (float)(clock() - start_depth) / CLOCKS_PER_SEC;
             printf("  --- Found at count %lld in %f sec\n", count, sec);
-            log_append("  -> Found in depth %d at count %lld\n", depth_limit,
+            log_append("  -> Found in depth %d at count %lld\n", depth,
                     count);
             answer = compose_answer(steps);
 #if 0
@@ -1317,6 +1317,45 @@ solve_puzzle5(
 
 ////////////////////////////////////////////////////////////////////////////
 //
+
+static int opt_depth_limit = 0;
+
+    void
+solver_set_depth_limit(int value)
+{
+    opt_depth_limit = value;
+}
+
+    string
+solve_puzzle6(
+        const clock_t& start,
+        int w,
+        int h,
+        const string& s,
+        int timeout_seconds)
+{
+    string final = get_final_state(s);
+    board_t board(w, h, s);
+    board_t goal(w, h, final);
+    distbl_t distbl(goal);
+
+    int depth = opt_depth_limit;
+    if (depth <= 0)
+        depth = 100;
+
+    printf("  -- Depth #%d\n", depth);
+    string answer;
+    int retval = depth_first3(answer, start, depth, board, distbl,
+            timeout_seconds);
+    if (retval == 0)
+        return answer;
+
+    return string();
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+
     string
 solve_puzzle(
         int w,
@@ -1344,6 +1383,9 @@ solve_puzzle(
             break;
         case 5:
             answer = solve_puzzle5(start, w, h, s, timeout_seconds);
+            break;
+        case 6:
+            answer = solve_puzzle6(start, w, h, s, timeout_seconds);
             break;
     }
     clock_t end = ::clock();

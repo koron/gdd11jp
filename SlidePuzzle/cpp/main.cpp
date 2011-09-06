@@ -139,16 +139,31 @@ main(int argc, char** argv)
             i += 1;
             rank_limit = ::atoi(argv[i]);
         }
-        else if (a == string("-1"))
-            version = 1;
-        else if (a == string("-2"))
-            version = 2;
-        else if (a == string("-3"))
-            version = 3;
-        else if (a == string("-4"))
-            version = 4;
-        else if (a == string("-5"))
-            version = 5;
+        else if (a == string("-d") || a == string("--depth"))
+        {
+            if (no_next)
+            {
+                printf("option '%s' requires an argument.\n", a.c_str());
+                return 1;
+            }
+            i += 1;
+            solver_set_depth_limit(::atoi(argv[i]));
+        }
+        else if (a == string("-a") || a == string("--algorithm"))
+        {
+            if (no_next)
+            {
+                printf("option '%s' requires an argument.\n", a.c_str());
+                return 1;
+            }
+            i += 1;
+            version = ::atoi(argv[i]);
+            if (version < 0 && version > 6)
+            {
+                printf("unknown algorithm #%d\n", version);
+                return 1;
+            }
+        }
         else
         {
             puzzle_t p(a);

@@ -1,6 +1,9 @@
 #ifndef SOLVER_HPP__
 #define SOLVER_HPP__
 
+void solver_set_depth_limit(
+        int value);
+
 std::string solve_puzzle(
         int w,
         int h,
