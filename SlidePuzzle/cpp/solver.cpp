@@ -30,6 +30,7 @@ static const cell_t WALL_CELL = (cell_t)0xFF;
 
 static bool enable_shrink = true;
 static int iteration_limit = 1500000;
+static int opt_depth_limit = 0;
 
     string
 get_final_state(const string& s)
@@ -1178,6 +1179,8 @@ solve_puzzle3(
     distbl_t distbl(goal);
 
     int init_depth = distbl.get_distance(board);
+    if (opt_depth_limit > 0 && opt_depth_limit > init_depth)
+        init_depth = opt_depth_limit;
 
     // fix init_depth even/odd.
     int zero_dist = get_distance(w, s, final);
@@ -1306,6 +1309,8 @@ solve_puzzle5(
     distbl_t distbl(board);
 
     int init_depth = distbl.get_distance(goal);
+    if (opt_depth_limit > 0 && opt_depth_limit > init_depth)
+        init_depth = opt_depth_limit;
 
     // fix init_depth even/odd.
     int zero_dist = get_distance(w, s, final);
@@ -1328,8 +1333,6 @@ solve_puzzle5(
 
 ////////////////////////////////////////////////////////////////////////////
 //
-
-static int opt_depth_limit = 0;
 
     void
 solver_set_depth_limit(int value)
