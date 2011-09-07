@@ -164,7 +164,7 @@ solve_puzzle1(
         }
         if ((count & 0x3FFFF) == 0)
         {
-            printf(" -- count:%d queue:%zd hash:%zd\n",
+            printf(" -- count:%d queue:%lld hash:%lld\n",
                     count, queue.size(), hash.size());
         }
         if (timeout_seconds > 0)
@@ -948,7 +948,7 @@ public:
     }
 
     void detect_neighbor_item(
-            int pos, 
+            int pos,
             vector<int>& detected,
             const set<int>& seen,
             const board_t& board)
@@ -1480,9 +1480,9 @@ solve_puzzle8(
             return answer;
         else if (answer == TIMEOUT)
             return string();
-        
+
         // TODO:
-        printf("min_answer_list.size()=%zd\n", min_answer_list.size());
+        printf("min_answer_list.size()=%lld\n", min_answer_list.size());
     }
 }
 
