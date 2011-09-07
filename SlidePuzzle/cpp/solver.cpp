@@ -1047,6 +1047,7 @@ depth_first3(
     clock_t start_depth = clock();
     int min_dist = INT_MAX;
     int min_depth = 0;
+    int min_count = 0;
     int64_t count = 0;
     int64_t flood = 0;
     int depth = 1;
@@ -1139,11 +1140,13 @@ depth_first3(
         {
             if (distance < min_dist || depth < min_depth)
             {
+                min_count = 0;
                 min_dist = distance;
                 min_depth = depth;
                 if (min_answer)
                     *min_answer = compose_answer(steps);
             }
+            ++min_count;
         }
 
         // Prepare for next step.
@@ -1156,7 +1159,8 @@ depth_first3(
     }
 
     float sec = (float)(clock() - start_depth) / CLOCKS_PER_SEC;
-    printf("  --- Not found: %lld (min=%d, sec=%f)\n", count, min_dist, sec);
+    printf("  --- Not found: %lld (min=%dx%d@%d, sec=%f)\n", count,
+            min_dist, min_count, min_depth, sec);
     if (min_answer)
     {
         printf("  ---- %s\n", min_answer->c_str());
