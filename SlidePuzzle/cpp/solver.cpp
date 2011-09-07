@@ -878,6 +878,11 @@ public:
         return raw;
     }
 
+    pos_t get_pos() const
+    {
+        return pos_t(pos % width, pos / width);
+    }
+
 private:
     board_t();
     //board_t(const board_t&);
@@ -1032,7 +1037,7 @@ depth_first3(
         int timeout_seconds,
         string* min_answer = NULL,
         vector<string>* min_answer_list = NULL,
-        int min_answer_limit = 100)
+        int min_answer_limit = 0)
 {
     // Init steps.
     vector<step2_t> steps(depth_limit + 1);
@@ -1142,7 +1147,8 @@ depth_first3(
         if (distance <= min_dist)
         {
             bool has_out_list = (min_answer_list != NULL
-                    && min_answer_list->size() < min_answer_limit);
+                    && (min_answer_limit <= 0 ||
+                        min_answer_list->size() < min_answer_limit));
             string operations;
             if (min_answer || has_out_list)
                 operations = compose_answer(steps);
@@ -1229,6 +1235,8 @@ get_init_depth(
         const string& final)
 {
     int init_depth = distbl.get_distance(board);
+    if (opt_depth_limit > 0 && opt_depth_limit > init_depth)
+        init_depth = opt_depth_limit;
 
     // fix init_depth even/odd.
     int zero_dist = get_distance(board.width, board.raw_state(), final);
@@ -1456,34 +1464,82 @@ solve_puzzle8(
     string final = get_final_state(s);
     board_t board(w, h, s);
     board_t goal(w, h, final);
-    distbl_t distbl(goal);
 
-    int init_depth = distbl.get_distance(board);
-    if (opt_depth_limit > 0 && opt_depth_limit > init_depth)
-        init_depth = opt_depth_limit;
-
-    // fix init_depth even/odd.
-    int zero_dist = get_distance(w, s, final);
-    if ((init_depth % 2) != (zero_dist % 2))
-        init_depth += 1;
-
+    // 1st stage, forward depth search.
     vector<string> min_answer_list;
-    for (int depth = init_depth; ; depth += 2)
+    printf("  -- 1st STAGE\n");
     {
+        distbl_t distbl(goal);
+        int depth = get_init_depth(distbl, board, final);
         printf("  -- Depth #%d\n", depth);
-        string answer;
-        board_t work(w, h, s);
+        board_t work(board);
         min_answer_list.clear();
+        string answer;
         int retval = depth_first3(answer, start, depth, work, distbl,
-                timeout_seconds, NULL, &min_answer_list, 100);
+                0, NULL, &min_answer_list, 100);
         if (retval == 0)
             return answer;
-        else if (answer == TIMEOUT)
-            return string();
-
-        // TODO:
-        printf("min_answer_list.size()=%lld\n", min_answer_list.size());
     }
+
+    // Check duplication.
+    vector<string> min_answer_list2;
+    {
+        set<string> seen_boards;
+        for (vector<string>::const_iterator i = min_answer_list.begin();
+                i != min_answer_list.end(); ++i)
+        {
+            board_t curr(board);
+            curr.apply(*i);
+            string raw_state = curr.raw_state();
+            if (seen_boards.find(raw_state) == seen_boards.end())
+            {
+                seen_boards.insert(raw_state);
+                min_answer_list2.push_back(*i);
+            }
+        }
+        min_answer_list.clear();
+    }
+
+    if (min_answer_list2.size() <= 0)
+    {
+        printf("  --- No 2nd stage targets.\n");
+    }
+
+    // 2nd stage, backword depth search.
+    printf("  -- 2nd STAGE: %lld\n", min_answer_list2.size());
+    for (vector<string>::const_iterator i = min_answer_list2.begin();
+            i != min_answer_list2.end(); ++i)
+    {
+        const string& first_answer = *i;
+
+        board_t back_goal(board);
+        back_goal.apply(first_answer);
+
+        printf("  -- 1st length: %d\n", first_answer.length());
+        back_goal.print(string("  -- BACKGOAL:"), string("  --- "));
+
+        distbl_t distbl(back_goal);
+        int init_depth = distbl.get_distance(goal);
+        int zero_dist = goal.get_pos() - back_goal.get_pos();
+        if ((init_depth % 2) != (zero_dist % 2))
+            init_depth += 1;
+
+        clock_t sub_start = clock();
+        for (int depth = init_depth; ; depth += 2)
+        {
+            printf("  -- Depth #%d\n", depth);
+            string answer;
+            board_t work(goal);
+            int retval = depth_first3(answer, sub_start, depth, work, distbl,
+                    timeout_seconds);
+            if (retval == 0)
+                return first_answer + reverse_answer(answer);
+            else if (answer == TIMEOUT)
+                break;
+        }
+    }
+
+    return string();
 }
 
 ////////////////////////////////////////////////////////////////////////////
