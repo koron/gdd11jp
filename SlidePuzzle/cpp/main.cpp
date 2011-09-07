@@ -12,6 +12,7 @@ using std::string;
 using std::istringstream;
 using std::ifstream;
 
+static const int MAX_ALGORITHM_NUM = 8;
 static int rank_limit = 36;
 
 class puzzle_t
@@ -158,7 +159,7 @@ main(int argc, char** argv)
             }
             i += 1;
             version = ::atoi(argv[i]);
-            if (version < 0 && version > 7)
+            if (version < 0 && version > MAX_ALGORITHM_NUM)
             {
                 printf("unknown algorithm #%d\n", version);
                 return 1;
