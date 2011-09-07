@@ -1383,6 +1383,11 @@ solve_puzzle6(
     if (depth <= 0)
         depth = 100;
 
+    // fix depth even/odd.
+    int zero_dist = get_distance(w, s, final);
+    if ((depth % 2) != (zero_dist % 2))
+        depth += 1;
+
     printf("  -- Depth #%d\n", depth);
     string answer;
     int retval = depth_first3(answer, start, depth, board, distbl,
