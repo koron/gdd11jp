@@ -1060,7 +1060,8 @@ depth_first3(
             int sec = (clock() - start) / CLOCKS_PER_SEC;
             if (sec > timeout_seconds)
             {
-                log_append("  -> Time over\n");
+                log_append("  -> Time over: %lld (min=%dx%d@%d)\n",
+                        count, min_dist, min_count, min_depth);
                 answer = TIMEOUT;
                 return min_dist;
             }
