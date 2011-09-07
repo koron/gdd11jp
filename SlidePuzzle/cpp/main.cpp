@@ -158,7 +158,7 @@ main(int argc, char** argv)
             }
             i += 1;
             version = ::atoi(argv[i]);
-            if (version < 0 && version > 6)
+            if (version < 0 && version > 7)
             {
                 printf("unknown algorithm #%d\n", version);
                 return 1;

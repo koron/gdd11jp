@@ -1371,6 +1371,63 @@ solve_puzzle6(
 //
 
     string
+solve_puzzle7(
+        const clock_t& start,
+        int w,
+        int h,
+        const string& s,
+        int timeout_seconds)
+{
+    string final = get_final_state(s);
+    board_t board(w, h, s);
+    board_t goal(w, h, final);
+    distbl_t distbl(board);
+    //distbl.print(string("  -- DISTANCE TABLE:"), string("  --- "));
+
+    int init_depth = get_init_depth(distbl, goal, s);
+    string prefix;
+    int last_retval = 0;
+    float depth_timeout = 0.5f;
+
+    for (int depth = init_depth; ; depth += 2)
+    {
+        printf("  -- Depth #%d\n", depth);
+        string answer;
+        string min_answer;
+        board_t work(goal);
+        clock_t start2 = ::clock();
+        int retval = depth_first3(answer, start, depth, work, distbl,
+                timeout_seconds, &min_answer);
+        if (retval == 0)
+            return prefix + answer;
+        else if (answer == TIMEOUT)
+            return string();
+
+        float sec = (float)(clock() - start2) / CLOCKS_PER_SEC;
+        if (sec >= depth_timeout)
+        {
+            if (last_retval == retval)
+            {
+                depth_timeout *= 4.0f;
+                depth += retval - 2;
+                printf("  -- Extend depth's timeout: %f\n",depth_timeout);
+            }
+            else
+            {
+                last_retval = retval;
+                prefix += min_answer;
+                goal.apply(min_answer);
+                goal.print(string("  -- FORCE FORWARD:"), string("  --- "));
+                depth = get_init_depth(distbl, goal, s) - 2;
+            }
+        }
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////
+//
+
+    string
 solve_puzzle(
         int w,
         int h,
@@ -1400,6 +1457,11 @@ solve_puzzle(
             break;
         case 6:
             answer = solve_puzzle6(start, w, h, s, timeout_seconds);
+            break;
+        case 7:
+            answer = solve_puzzle7(start, w, h, s, timeout_seconds);
+            if (!answer.empty())
+                answer = reverse_answer(answer);
             break;
     }
     clock_t end = ::clock();
