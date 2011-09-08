@@ -28,6 +28,7 @@ sub width { return $_[0]->{-width}; }
 sub height { return $_[0]->{-height}; }
 sub state { return $_[0]->{-state}; }
 sub final { return $_[0]->{-final}; }
+sub delta { return $_[0]->{-delta}->{$_[1]}; }
 
 sub _get_final {
     my ($first) = @_;

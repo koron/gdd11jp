@@ -46,7 +46,6 @@ sub power {
     for (my ($i, $N) = (0, length($self->spot)); $i < $N; ++$i) {
         $pos{$other->spot($i)} = $pos{$self->spot($i)} || 0;
     }
-    print Dumper(\%pos);
     #print "HERE: $source $target\n";
     for (my ($i, $N) = (0, length($source) - 1); $i < $N; ++$i) {
         my $left = $pos{substr($source, $i, 1)};
@@ -69,7 +68,7 @@ sub power {
         }
     }
 
-    return $power;
+    return ($power, $target);
 }
 
 1;

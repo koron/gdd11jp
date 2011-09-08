@@ -9,32 +9,80 @@ use Time::HiRes qw(gettimeofday);
 use Puzzle;
 use Route;
 use LoopState;
+use Step;
 
-&solve_route(
+my $answer = &solve_route(
     '5,5,B234017==N6=KF5G=IDELMJOA',
     24,
     'UUUULLLLDDDDRRUURDDR',
     [ 6 ]
 );
+printf("ANSWER: %s\n", $answer);
 
 sub solve_route {
     my ($pstr, $start, $rstr, $spots) = @_;
 
     my $puzzle = Puzzle->new($pstr);
 
-    my $array = &get_route_array($puzzle, $start, $rstr);
-    my $route = Route->new($array, $spots);
+    my $route = Route->new(&get_route_array($puzzle, $start, $rstr), $spots);
+    my $basement = LoopState->new($puzzle->final, $route);
 
-    my $loop_curr = LoopState->new($puzzle->state, $route);
-    my $loop_last = LoopState->new($puzzle->final, $route);
+    my $count = 0;
+    my @steps = (Step->new('', $puzzle, $puzzle->state));
+    my ($min_power) = &get_power($puzzle->state, $route, $basement);
+    my %seen_state;
+    my %seen_loop;
+    while (scalar(@steps) > 0) {
+        my $tail = $steps[-1];
+        my $next = $tail->next;
+        unless ($next) {
+            pop @steps;
+            next;
+        }
 
-    # TODO:
+        # Check goal or seen.
+        if ($next->state eq $puzzle->final) {
+            return join('', map { $_->moved; } @steps);
+        }
 
-    my $power = $loop_last->power($loop_curr);
-    printf("power=%d\n", $power);
+        # Calculate power (distance) info.
+        my ($power, $loop) = &get_power($next->state, $route, $basement);
+        if ($power > $min_power or exists $seen_state{$next->state}) {
+            next;
+        }
 
-    #print Dumper($loop_curr);
-    #print Dumper($loop_last);
+        # Reset seen state when power is advaced.
+        if ($power < $min_power) {
+            printf("  Power down %d->%d at %d\n", $min_power, $power, $count);
+            $min_power = $power;
+            %seen_state = ();
+            %seen_loop = ();
+        }
+
+        unless (exists $seen_loop{$loop}) {
+            $seen_loop{$loop} = 1;
+            $seen_state{$next->state} = 1;
+        }
+
+        ++$count;
+        push @steps, $next;
+
+        if (($count % 10000) == 0) {
+            #print Dumper(\@steps);
+            printf("power=%d\n", $power);
+            printf("expect_loop=%s\n", substr($basement->loop, 1));
+            printf("actual_loop=%s\n", $loop);
+            exit;
+        }
+    }
+
+    return undef;
+}
+
+sub get_power {
+    my ($state, $route, $basement) = @_;
+    my $curr = LoopState->new($state, $route);
+    return $basement->power($curr);
 }
 
 sub get_route_array {
