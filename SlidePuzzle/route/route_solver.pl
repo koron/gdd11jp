@@ -22,16 +22,19 @@ printf("ANSWER: %s\n", $answer);
 sub solve_route {
     my ($pstr, $start, $rstr, $spots) = @_;
 
-    my $puzzle = Puzzle->new($pstr);
+    my $puzzle = Puzzle->new(split(/,/, $pstr));
 
     my $route = Route->new(&get_route_array($puzzle, $start, $rstr), $spots);
     my $basement = LoopState->new($puzzle->final, $route);
 
-    my $count = 0;
-    my @steps = (Step->new('', $puzzle, $puzzle->state));
+    # Cutting branches woking area.
     my ($min_power) = &get_power($puzzle->state, $route, $basement);
     my %seen_state;
     my %seen_loop;
+    my $pivot_time = gettimeofday() + 1;
+
+    my $count = 0;
+    my @steps = (Step->new('', $puzzle, $puzzle->state));
     while (scalar(@steps) > 0) {
         my $tail = $steps[-1];
         my $next = $tail->next;
@@ -57,6 +60,8 @@ sub solve_route {
             $min_power = $power;
             %seen_state = ();
             %seen_loop = ();
+            my $p2 = Puzzle->new($puzzle->w, $puzzle->h, $next->state);
+            $p2->print_state(undef, "    ");
         }
 
         unless (exists $seen_loop{$loop}) {
@@ -67,7 +72,13 @@ sub solve_route {
         ++$count;
         push @steps, $next;
 
-        if (($count % 10000) == 0) {
+        if ((my $now = gettimeofday()) > $pivot_time) {
+            printf("  (Steps:%d State:%s Loop:%s)\n",
+                scalar(@steps), scalar(%seen_state), scalar(%seen_loop));
+            $pivot_time = $now + 1;
+        }
+
+        if (($count % 100000) == 0) {
             #print Dumper(\@steps);
             printf("power=%d\n", $power);
             printf("expect_loop=%s\n", substr($basement->loop, 1));

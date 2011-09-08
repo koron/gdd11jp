@@ -38,6 +38,7 @@ sub power {
     (my $target = $other->loop) =~ s/0//;
     my $index = index($target, substr($source, 0, 1));
     $target = substr($target, $index) . substr($target, 0, $index);
+
     my %pos;
     for (my ($i, $N) = (0, length($target)); $i < $N; ++$i) {
         $pos{substr($target, $i, 1)} = $i;
@@ -46,14 +47,13 @@ sub power {
     for (my ($i, $N) = (0, length($self->spot)); $i < $N; ++$i) {
         $pos{$other->spot($i)} = $pos{$self->spot($i)} || 0;
     }
+
     #print "HERE: $source $target\n";
-    for (my ($i, $N) = (0, length($source) - 1); $i < $N; ++$i) {
-        my $left = $pos{substr($source, $i, 1)};
-        my $right = $pos{substr($source, $i + 1, 1)};
-        if ($right < $left) {
-            #printf("  %s -> %s\n", substr($source, $i, 1), substr($source, $i + 1, 1));
-            $power += 1;
-        }
+    for (my ($i, $N) = (0, length($source)); $i < $N; ++$i) {
+        my $ex = $i + 1;
+        my $ac = $pos{substr($source, $ex % $N, 1)};
+        $ac += $N if $ac < $ex;
+        $power += $ac - $ex;
     }
 
 

@@ -5,15 +5,14 @@ use strict;
 use warnings;
 
 sub new {
-    my ($class, $state) = @_;
-    my ($w, $h, $s) = split /,/, $state;
-    my $final = &_get_final($s);
+    my ($class, $w, $h, $state) = @_;
+    my $final = &_get_final($state);
     $w += 0;
     $h += 0;
     return bless {
         -width=>$w,
         -height=>$h,
-        -state=>$s,
+        -state=>$state,
         -final=>$final,
         -delta => {
             'L' => -1,
@@ -24,6 +23,8 @@ sub new {
     }, $class;
 }
 
+sub w { return $_[0]->{-width}; }
+sub h { return $_[0]->{-height}; }
 sub width { return $_[0]->{-width}; }
 sub height { return $_[0]->{-height}; }
 sub state { return $_[0]->{-state}; }
@@ -63,6 +64,18 @@ sub move {
         return $pos + $w if $pos + $w < $w * $h;
     }
     return -1;
+}
+
+sub print_state {
+    my ($self, $label, $header) = @_;
+    print $label, "\n" if defined $label;
+    my $H = $self->height;
+    my $W = $self->width;
+    my $S = $self->state;
+    for (my $row = 0; $row < $H; ++$row) {
+        print $header if defined $header;
+        print substr($S, $row * $W, $W), "\n";
+    }
 }
 
 1;
