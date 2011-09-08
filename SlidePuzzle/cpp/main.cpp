@@ -12,7 +12,7 @@ using std::string;
 using std::istringstream;
 using std::ifstream;
 
-static const int MAX_ALGORITHM_NUM = 8;
+static const int MAX_ALGORITHM_NUM = 9;
 static int rank_limit = 36;
 
 class puzzle_t
