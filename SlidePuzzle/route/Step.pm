@@ -5,12 +5,13 @@ use strict;
 use warnings;
 
 sub new {
-    my ($class, $moved, $puzzle, $state) = @_;
+    my ($class, $moved, $puzzle, $state, $min_power) = @_;
     my $self = bless {
         -moved => $moved,
         -puzzle => $puzzle,
         -state => $state,
         -pos => index($state, '0'),
+        -min_power => $min_power,
     }, $class;
     $self->{-movable} = $self->_get_movable;
     return $self;
@@ -23,6 +24,9 @@ sub state {
     return defined $_[1] ? substr($_[0]->{-state}, $_[1], 1) : $_[0]->{-state};
 }
 sub pos { return $_[0]->{-pos}; }
+sub min_power {
+    return defined $_[1] ? $_[0]->{-min_power} = $_[1] : $_[0]->{-min_power};
+}
 
 sub _wall_check {
     return ($_[0] and $_[0] ne '=') ? $_[0] : undef;
@@ -65,8 +69,9 @@ sub next {
     my $oldpos = $self->pos;
     my $newpos = $oldpos + $puzzle->delta($move);
     my $state = $self->state;
+    my $min_power = $self->min_power;
     substr($state, $oldpos, 1 , substr($state, $newpos, 1, '0'));
-    return Step->new($move, $puzzle, $state);
+    return Step->new($move, $puzzle, $state, $min_power);
 }
 
 sub _get_movable {

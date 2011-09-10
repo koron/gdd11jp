@@ -21,6 +21,14 @@ sub new {
     }, $class;
 }
 
+sub _new {
+    my ($class, $loop, $spot) = @_;
+    return bless {
+        -loop => $loop,
+        -spot => $spot,
+    }, $class;
+}
+
 sub spot {
     return defined $_[1] ? substr($_[0]->{-spot}, $_[1], 1) : $_[0]->{-spot};
 }
@@ -51,9 +59,11 @@ sub power {
     #print "HERE: $source $target\n";
     for (my ($i, $N) = (0, length($source)); $i < $N; ++$i) {
         my $ex = $i + 1;
-        my $ac = $pos{substr($source, $ex % $N, 1)};
+        my $ch = substr($source, $ex % $N, 1);
+        my $ac = $pos{$ch};
         $ac += $N if $ac < $ex;
         $power += $ac - $ex;
+        #printf("  %s: %d,%d -> %d\n", $ch, $ac, $ex, $ac - $ex);
     }
 
 
