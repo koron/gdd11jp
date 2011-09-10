@@ -12,9 +12,13 @@ use LoopState;
 use Step;
 
 # USAGE SAMPLE:
-#   $ perl route_solver.pl < q/2901.txt
+#   $ perl route_solver.pl [MOVES] < q/2901.txt
 
-while (<>) {
+if (defined $ARGV[0]) {
+    &Step::set_move_type($ARGV[0] + 0);
+}
+
+while (<STDIN>) {
     s/\s+$//;
     &solve_route2($_);
 }
@@ -25,8 +29,8 @@ sub solve_route2 {
     my $ans = &solve_route($pstr, $start + 0, $rstr, [split /,/, $spots]);
     $ans ||= '';
     my @checks = &check_root($pstr, $ans);
-    printf("RESULT:%s %d %s:%s\n", $name, length($ans), 
-        ($checks[0] ? "OK" : "NG"), $ans);
+    printf("RESULT:%s:%s:%d:%s\n", $name, $ans, length($ans),
+        ($checks[0] ? "OK" : "NG"));
     return $ans;
 }
 
@@ -39,16 +43,17 @@ sub solve_route {
     my $basement = LoopState->new($puzzle->final, $route);
 
     # Cutting branches woking area.
-    my ($min_power) = &get_power($puzzle->state, $route, $basement);
-    my %seen_state;
-    my %seen_loop;
     my $pivot_time = gettimeofday() + 1;
 
     my $count = 0;
-    my @steps = (Step->new('', $puzzle, $puzzle->state));
+    my $first_step = Step->new('', $puzzle, $puzzle->state,
+        &get_power($puzzle->state, $route, $basement));
+    my @steps = ($first_step);
     while (scalar(@steps) > 0) {
         my $tail = $steps[-1];
         my $next = $tail->next;
+
+        # Backtrack.
         unless ($next) {
             pop @steps;
             next;
@@ -56,36 +61,34 @@ sub solve_route {
 
         # Check goal or seen.
         if ($next->state eq $puzzle->final) {
+            push @steps, $next;
             return join('', map { $_->moved; } @steps);
         }
 
         # Calculate power (distance) info.
-        my ($power, $loop) = &get_power($next->state, $route, $basement);
-        if ($power > $min_power or exists $seen_state{$next->state}) {
+        my ($power, $loop) = &get_power2($next->state, $route, $basement);
+        if ($power > $next->min_power or $next->seen->is_seen($next->state)) {
             next;
         }
 
         # Reset seen state when power is advaced.
-        if ($power < $min_power) {
-            printf("  Power down %d->%d at %d\n", $min_power, $power, $count);
-            $min_power = $power;
-            %seen_state = ();
-            %seen_loop = ();
-            my $p2 = Puzzle->new($puzzle->w, $puzzle->h, $next->state);
-            $p2->print_state(undef, "    ");
+        if ($power < $next->min_power) {
+            printf("  Power down %d->%d at %d (%s)\n",
+                $next->min_power, $power, $count, $loop);
+            $next->min_power($power);
+            $next->seen(SeenTable->new());
+            #my $p2 = Puzzle->new($puzzle->w, $puzzle->h, $next->state);
+            #$p2->print_state(undef, "    ");
         }
 
-        unless (exists $seen_loop{$loop}) {
-            $seen_loop{$loop} = 1;
-            $seen_state{$next->state} = 1;
-        }
+        $next->seen->add($loop, $next->state);
 
         ++$count;
         push @steps, $next;
 
         if ((my $now = gettimeofday()) > $pivot_time) {
-            printf("  (Steps:%d State:%s Loop:%s)\n",
-                scalar(@steps), scalar(%seen_state), scalar(%seen_loop));
+            printf("  (Steps:%d State:%s Loop:%s)\n", scalar(@steps),
+                $next->seen->size_state, $next->seen->size_loop);
             $pivot_time = $now + 1;
         }
 
@@ -102,6 +105,12 @@ sub solve_route {
 }
 
 sub get_power {
+    my ($state, $route, $basement) = @_;
+    my @retvals = &get_power2($state, $route, $basement);
+    return $retvals[0];
+}
+
+sub get_power2 {
     my ($state, $route, $basement) = @_;
     my $curr = LoopState->new($state, $route);
     return $basement->power($curr);
