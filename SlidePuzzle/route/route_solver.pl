@@ -11,16 +11,24 @@ use Route;
 use LoopState;
 use Step;
 
-my $problem = '5,5,B234017==N6=KF5G=IDELMJOA';
-my $answer = &solve_route(
-    $problem,
-    24,
-    'UUUULLLLDDDDRRUURDDR',
-    [ 6 ]
-);
-printf("ANSWER: %s\n", $answer);
-printf("LENGTH: %d\n", length($answer));
-printf("CHECK: %s\n", &check_root($problem, $answer) ? "OK" : "NG");
+# USAGE SAMPLE:
+#   $ perl route_solver.pl < q/2901.txt
+
+while (<>) {
+    s/\s+$//;
+    &solve_route2($_);
+}
+
+sub solve_route2 {
+    my ($str) = @_;
+    my ($name, $pstr, $start, $rstr, $spots) = split / /, $str;
+    my $ans = &solve_route($pstr, $start + 0, $rstr, [split /,/, $spots]);
+    $ans ||= '';
+    my @checks = &check_root($pstr, $ans);
+    printf("RESULT:%s %d %s:%s\n", $name, length($ans), 
+        ($checks[0] ? "OK" : "NG"), $ans);
+    return $ans;
+}
 
 sub solve_route {
     my ($pstr, $start, $rstr, $spots) = @_;
@@ -163,7 +171,7 @@ sub check_root {
     if ($s ne $final) {
         return (0, ['unmatched', '  actually: '.$s, '  expected: '.$final]);
     } else {
-        return 1;
+        return (1);
     }
 }
 
