@@ -52,8 +52,11 @@ sub power {
         $pos{substr($target, $i, 1)} = $i;
         #printf "  %s : %d\n", substr($target, $i, 1), $i;
     }
+    my $target2 = '';
     for (my ($i, $N) = (0, length($self->spot)); $i < $N; ++$i) {
-        $pos{$other->spot($i)} = $pos{$self->spot($i)} || 0;
+        my $ch = $other->spot($i);
+        $pos{$ch} = $pos{$self->spot($i)} || 0;
+        $target2 .= $ch;
     }
 
     #print "HERE: $source $target\n";
