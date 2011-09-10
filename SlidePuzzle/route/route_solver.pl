@@ -11,13 +11,16 @@ use Route;
 use LoopState;
 use Step;
 
+my $problem = '5,5,B234017==N6=KF5G=IDELMJOA';
 my $answer = &solve_route(
-    '5,5,B234017==N6=KF5G=IDELMJOA',
+    $problem,
     24,
     'UUUULLLLDDDDRRUURDDR',
     [ 6 ]
 );
 printf("ANSWER: %s\n", $answer);
+printf("LENGTH: %d\n", length($answer));
+printf("CHECK: %s\n", &check_root($problem, $answer) ? "OK" : "NG");
 
 sub solve_route {
     my ($pstr, $start, $rstr, $spots) = @_;
@@ -109,4 +112,77 @@ sub get_route_array {
         return undef;
     }
     return $array;
+}
+
+sub check_root {
+    my ($problem, $root) = @_;
+
+    my ($w, $h, $s) = split /,/, $problem;
+    my $final = &get_final_status($s);
+
+    my $pos = index $s, '0';
+    for (my $i = 0; $i < length($root); ++$i) {
+        if ($s eq $final) {
+            return (0, [sprintf('reached goal at #%d', $i)]);
+        }
+        my $ch = substr($root, $i, 1);
+        my $newpos;
+        if ($ch eq 'L') {
+            if (($pos % $w) > 0) {
+                $newpos = $pos - 1;
+            } else {
+                return (0, [sprintf('over LEFT at #%d', $i)]);
+            }
+        } elsif ($ch eq 'R') {
+            if (($pos % $w) < $w - 1) {
+                $newpos = $pos + 1;
+            } else {
+                return (0, [sprintf('over RIGHT at #%d', $i)]);
+            }
+        } elsif ($ch eq 'U') {
+            if ($pos >= $w) {
+                $newpos = $pos - $w;
+            } else {
+                return (0, [sprintf('over UP at #%d', $i)]);
+            }
+        } elsif ($ch eq 'D') {
+            if ($pos < $w * $h - $w) {
+                $newpos = $pos + $w;
+            } else {
+                return (0, [sprintf('over UP at #%d', $i)]);
+            }
+        } else {
+            return (0, [sprintf('unknown digit %s at #%d', $ch, $i)]);
+        }
+        if (substr($s, $newpos, 1) eq '=') {
+            return (0, [sprintf('detect wall by %s at #%d', $ch, $i)]);
+        }
+        substr($s, $pos, 1, substr($s, $newpos, 1, '0'));
+        $pos = $newpos;
+    }
+    if ($s ne $final) {
+        return (0, ['unmatched', '  actually: '.$s, '  expected: '.$final]);
+    } else {
+        return 1;
+    }
+}
+
+sub get_final_status {
+    my ($first) = @_;
+
+    (my $numbers = $first) =~ s/[=0]//g;
+    my @numbers = sort split //, $numbers;
+    push @numbers, '0';
+
+    my @final;
+
+    (my $walls = $first) =~ s/[^=]/./g;
+    for my $ch (split(//, $walls)) {
+        if ($ch eq '.') {
+            $ch = shift @numbers;
+        }
+        push @final, $ch;
+    }
+
+    return join('', @final);
 }

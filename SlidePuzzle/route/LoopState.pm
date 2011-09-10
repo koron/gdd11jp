@@ -58,12 +58,13 @@ sub power {
 
     #print "HERE: $source $target\n";
     for (my ($i, $N) = (0, length($source)); $i < $N; ++$i) {
-        my $ex = $i + 1;
-        my $ch = substr($source, $ex % $N, 1);
+        my $pivot = substr($source, $i, 1);
+        my $ex = $pos{$pivot} + 1;
+        my $ch = substr($source, ($i + 1) % $N, 1);
         my $ac = $pos{$ch};
-        $ac += $N if $ac < $ex;
-        $power += $ac - $ex;
-        #printf("  %s: %d,%d -> %d\n", $ch, $ac, $ex, $ac - $ex);
+        my $d = ($ex % $N) != $ac ? 1 : 0;
+        $power += $d;
+        #printf("  %s: %d,%d -> %d\n", $ch, $ac, $ex, $d);
     }
 
 
