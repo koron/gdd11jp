@@ -137,6 +137,8 @@ solve_puzzle1(
     set<string> hash;
     hash.insert(s);
     string final = get_final_state(s);
+    int64_t hash_hit_count = 0;
+    int64_t hash_check_count = 0;
 
     // Setup option switches.
     bool shrinkable_height = false;
@@ -193,6 +195,7 @@ solve_puzzle1(
 
             if (next == final) {
                 log_append("  -> Found at %d\n", count);
+                printf("  hash hit: %lld/%lld\n", hash_hit_count, hash_check_count);
                 return new_hist.substr(1);
             }
 
@@ -206,6 +209,7 @@ solve_puzzle1(
                 {
                     new_hist += answer2;
                     log_append("  -> Found at %d (height shrinked)\n", count);
+                    printf("  hash hit: %lld/%lld\n", hash_hit_count, hash_check_count);
                     return new_hist.substr(1);
                 }
             }
@@ -223,20 +227,27 @@ solve_puzzle1(
                 {
                     new_hist += answer3;
                     log_append("  -> Found at %d (width shrinked)\n", count);
+                    printf("  hash hit: %lld/%lld\n", hash_hit_count, hash_check_count);
                     return new_hist.substr(1);
                 }
             }
 
+            ++hash_check_count;
             if (hash.find(next) == hash.end())
             {
                 hash.insert(next);
                 queue.push_back(qitem(next, new_hist));
+            }
+            else
+            {
+                ++hash_hit_count;
             }
         }
 
         queue.pop_front();
     }
 
+    printf("  hash hit: %lld/%lld\n", hash_hit_count, hash_check_count);
     return string();
 }
 
